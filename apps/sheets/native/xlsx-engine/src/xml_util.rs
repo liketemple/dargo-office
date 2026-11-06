@@ -52,9 +52,9 @@ fn hex_value(value: u8) -> Option<u8> {
 /// leading '/', and case drift in entry names. Excel opens such packages
 /// (tdf131575: .NET-written `xl\workbook.xml` with `sharedstrings.xml`).
 pub(crate) fn zip_entry<'a>(
-    archive: &'a mut ZipArchive<File>,
+    archive: &'a mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     name: &str,
-) -> zip::result::ZipResult<zip::read::ZipFile<'a, File>> {
+) -> zip::result::ZipResult<zip::read::ZipFile<'a, std::io::Cursor<Vec<u8>>>> {
     let resolved = if archive.index_for_name(name).is_some() {
         None
     } else {
@@ -88,7 +88,7 @@ pub(crate) fn zip_entry<'a>(
 /// read here undoes the work genoffice#781 did for media and `@genoffice/zip-gate` does
 /// for the docx and pptx hosts.
 pub(crate) fn read_zip_string(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     path: &str,
 ) -> Result<String, SidecarError> {
     let mut entry = zip_entry(archive, path)?;

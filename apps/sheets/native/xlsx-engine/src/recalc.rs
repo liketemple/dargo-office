@@ -995,8 +995,8 @@ fn numbers_agree(a: f64, b: f64) -> bool {
 /// needs the workbook imported; scanning the deflated worksheet parts first
 /// lets a formula-free workbook skip that import entirely.
 fn workbook_has_formulas(path: &Path) -> Result<bool, SidecarError> {
-    let file = std::fs::File::open(path).map_err(|error| SidecarError::Io(error.to_string()))?;
-    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
+    let bytes = std::fs::read(path).map_err(|error| SidecarError::Io(error.to_string()))?;
+    let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bytes)).map_err(|error| {
         SidecarError::Workbook(format!(
             "The formula engine could not read the workbook archive: {error}"
         ))
@@ -1059,8 +1059,8 @@ fn part_has_formula(part: &mut impl Read) -> Result<bool, SidecarError> {
 /// (`1`/`true`, namespaced documents) byte-for-byte consistent with the
 /// renderer's.
 fn workbook_uses_1904_dates(path: &Path) -> Result<bool, SidecarError> {
-    let file = std::fs::File::open(path).map_err(|error| SidecarError::Io(error.to_string()))?;
-    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
+    let bytes = std::fs::read(path).map_err(|error| SidecarError::Io(error.to_string()))?;
+    let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bytes)).map_err(|error| {
         SidecarError::Workbook(format!(
             "The formula engine could not read the workbook archive: {error}"
         ))

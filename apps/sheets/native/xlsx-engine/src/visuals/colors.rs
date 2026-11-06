@@ -274,7 +274,7 @@ pub fn resolve_color(
 /// styles.xml `<colors><indexedColors>` — a legacy-palette override written
 /// by workbooks converted from .xls. Entries are ARGB ("00RRGGBB").
 pub fn read_indexed_palette(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     colors: &mut ColorContext,
 ) -> Result<(), SidecarError> {
     let Some(xml) = read_optional_xml(archive, "xl/styles.xml")? else {
@@ -315,7 +315,7 @@ pub fn tint_to_hex(base: (u8, u8, u8), tint: f64) -> String {
     format!("#{red:02X}{green:02X}{blue:02X}")
 }
 
-pub fn read_theme_palette(archive: &mut ZipArchive<File>) -> Result<ColorContext, SidecarError> {
+pub fn read_theme_palette(archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>) -> Result<ColorContext, SidecarError> {
     let Some(xml) = read_optional_xml(archive, "xl/theme/theme1.xml")? else {
         return Ok(ColorContext::default());
     };

@@ -70,7 +70,7 @@ impl SourceFormats {
     /// resolve to None so callers fall through to the next candidate.
     pub fn first_cell_format(
         &mut self,
-        archive: &mut ZipArchive<File>,
+        archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
         reference: &str,
     ) -> Option<String> {
         let (sheet_name, cell) = split_first_cell(reference)?;
@@ -92,7 +92,7 @@ impl SourceFormats {
     /// byte zero on a cache miss, so a workbook whose charts carry many
     /// source-linked series used to rescan the same large worksheet once per
     /// referenced cell.
-    pub fn prefetch(&mut self, archive: &mut ZipArchive<File>, references: &[String]) {
+    pub fn prefetch(&mut self, archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>, references: &[String]) {
         // (worksheet path, cells still wanted) grouped per sheet, so each part
         // is opened at most once no matter how many charts point into it.
         let mut wanted: HashMap<String, HashSet<String>> = HashMap::new();
@@ -136,7 +136,7 @@ impl SourceFormats {
     /// None just as a single-cell lookup would.
     fn resolve_cells(
         &mut self,
-        archive: &mut ZipArchive<File>,
+        archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
         path: &str,
         wanted: &HashSet<String>,
     ) {
@@ -239,7 +239,7 @@ fn row_of(cell: &str) -> Option<u64> {
 }
 
 /// Streams the sheet part until the wanted cell (or past its row).
-fn cell_style_index(archive: &mut ZipArchive<File>, path: &str, cell: &str) -> Option<usize> {
+fn cell_style_index(archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>, path: &str, cell: &str) -> Option<usize> {
     let target_row = row_of(cell)?;
     let entry = zip_entry(archive, path).ok()?;
     count_sheet_pass();

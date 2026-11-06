@@ -23,8 +23,7 @@ pub(crate) fn index_worksheet(
     state: &Arc<(Mutex<SheetIndex>, Condvar)>,
     cancelled: &AtomicBool,
 ) -> Result<(), SidecarError> {
-    let file = File::open(workbook_path)?;
-    let mut archive = ZipArchive::new(file)?;
+    let mut archive = crate::open_workbook_archive(workbook_path)?;
     let link_targets = visuals::hyperlink_targets(&mut archive, worksheet_path)?;
     let entry = zip_entry(&mut archive, worksheet_path)?;
     let mut reader = Reader::from_reader(BufReader::new(entry));
@@ -1311,10 +1310,21 @@ pub(crate) fn flush_chunk(
         })
         .collect();
     if has_data {
-        let file = File::create(&path)?;
-        let mut writer = BufWriter::new(file);
-        serde_json::to_writer(&mut writer, chunk)?;
-        writer.flush()?;
+        #[cfg(not(target_family = "wasm"))]
+        {
+            let file = File::create(&path)?;
+            let mut writer = BufWriter::new(file);
+            serde_json::to_writer(&mut writer, chunk)?;
+            writer.flush()?;
+        }
+        // wasm：无磁盘，chunk 留在内存（SheetIndex.memory_chunks）
+        #[cfg(target_family = "wasm")]
+        {
+            let (lock, _) = &**state;
+            if let Ok(mut index) = lock.lock() {
+                index.memory_chunks.insert(chunk_index, chunk.clone());
+            }
+        }
         chunk.cells.clear();
         chunk.rows.clear();
     }
@@ -1323,7 +1333,10 @@ pub(crate) fn flush_chunk(
         .lock()
         .map_err(|_| SidecarError::Io("Worksheet index lock was poisoned.".into()))?;
     if has_data {
+        #[cfg(not(target_family = "wasm"))]
         index.chunk_files.insert(chunk_index, path);
+        #[cfg(target_family = "wasm")]
+        let _ = path;
     }
     index.outline_rows.extend(outline_rows);
     if !pending_formulas.is_empty() {

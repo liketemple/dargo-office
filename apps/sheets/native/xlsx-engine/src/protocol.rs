@@ -462,6 +462,22 @@ impl Engine {
         }
     }
 
+    /// WebAssembly 宿主入口：内存字节直开（无文件系统；sessions.open_bytes_with_locale）。
+    /// 应答信封与 Open 命令一致，sessionId 在 result 里。
+    pub fn open_bytes(&mut self, bytes: Vec<u8>, name: &str, locale: &str) -> String {
+        let cancelled = AtomicBool::new(false);
+        let vpath = std::path::PathBuf::from(name);
+        let result = self
+            .sessions
+            .open_bytes_with_locale(bytes, vpath, locale, None, &cancelled)
+            .and_then(to_json_value);
+        let resp = match result {
+            Ok(value) => Response::success("wasm-open".to_string(), value),
+            Err(error) => Response::from_error("wasm-open".to_string(), error),
+        };
+        serde_json::to_string(&resp).unwrap_or_else(|_| "{}".into())
+    }
+
     /// `None` only when threads are available and a recalc will write its
     /// response to stdout later.
     pub fn handle_line(&mut self, line: &str) -> Option<String> {

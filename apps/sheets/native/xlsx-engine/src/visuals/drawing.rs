@@ -93,7 +93,7 @@ pub(crate) fn parse_text_paragraphs(
 }
 
 pub(crate) fn read_drawing(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     drawing_path: &str,
     sheet_id: &str,
     id_offset: usize,

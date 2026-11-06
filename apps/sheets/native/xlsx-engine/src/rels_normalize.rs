@@ -72,8 +72,8 @@ struct RelationshipPart {
 /// every target is already relative and the original file can be imported
 /// as is.
 fn normalized_package(path: &Path) -> Result<Option<Vec<u8>>, SidecarError> {
-    let file = File::open(path)?;
-    let mut archive = ZipArchive::new(file)?;
+    let bytes = std::fs::read(path)?;
+    let mut archive = ZipArchive::new(std::io::Cursor::new(bytes))?;
     let parts = relationship_parts(&mut archive)?;
     let mut needs_normalization = false;
     for part in &parts {
@@ -105,7 +105,7 @@ fn normalized_package(path: &Path) -> Result<Option<Vec<u8>>, SidecarError> {
 }
 
 fn relationship_parts(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
 ) -> Result<Vec<RelationshipPart>, SidecarError> {
     let mut parts = Vec::new();
     for index in 0..archive.len() {
@@ -142,7 +142,7 @@ fn relationship_source_part(name: &str) -> Option<String> {
     }
 }
 
-fn read_part(archive: &mut ZipArchive<File>, index: usize) -> Result<String, SidecarError> {
+fn read_part(archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>, index: usize) -> Result<String, SidecarError> {
     let mut entry = archive.by_index(index)?;
     let name = entry.name()?.to_string();
     let declared = entry.size();
@@ -188,7 +188,7 @@ fn is_absolute_target(target: &str) -> bool {
 fn rewrite_part(
     xml: &str,
     part: &RelationshipPart,
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
 ) -> Result<Option<String>, SidecarError> {
     let document = Document::parse(xml).map_err(|error| {
         SidecarError::Workbook(format!("Invalid XML in {}: {error}", part.name))
@@ -258,7 +258,7 @@ fn push_escaped(out: &mut String, value: &str) {
 fn normalize_target(
     source_part: &str,
     target: &str,
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
 ) -> Result<Option<String>, SidecarError> {
     let absolute = is_absolute_target(target);
     let resolved = match resolve_relationship_target(source_part, target) {
@@ -332,7 +332,7 @@ fn relative_target(source_part: &str, target: &str) -> String {
 /// worksheet parts are not inflated and recompressed for a fixup that touches
 /// relations only.
 fn write_package(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     rewrites: &HashMap<usize, String>,
 ) -> Result<Vec<u8>, SidecarError> {
     let mut writer = ZipWriter::new(Cursor::new(Vec::new()));

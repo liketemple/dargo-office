@@ -20,6 +20,7 @@ pub mod convert;
 pub mod find;
 pub mod odf;
 pub mod protocol;
+pub mod wasm_api;
 pub mod recalc;
 mod rels_normalize;
 mod richdata;
@@ -64,7 +65,7 @@ const RANGE_WAIT: Duration = Duration::from_millis(750);
 const RANGE_WAIT_MAX_LAG_ROWS: usize = 16 * CHUNK_ROW_COUNT;
 const MAX_FORMULA_CELLS: usize = 100_000;
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 struct ChunkData {
     cells: Vec<CellRecord>,
     rows: Vec<RowProperty>,
@@ -156,13 +157,25 @@ impl CacheDirectory {
     fn commit(&mut self) {
         self.committed = true;
     }
+
+    /// wasm 内存占位（drop 不删任何磁盘）
+    #[cfg(target_family = "wasm")]
+    fn memory_placeholder() -> Self {
+        Self {
+            path: PathBuf::from("/__wasm_cache__"),
+            committed: false,
+        }
+    }
 }
 
 impl Drop for CacheDirectory {
     fn drop(&mut self) {
+        #[cfg(not(target_family = "wasm"))]
         if !self.committed && self.path.exists() {
             let _ = fs::remove_dir_all(&self.path);
         }
+        #[cfg(target_family = "wasm")]
+        let _ = &self.committed;
     }
 }
 
@@ -206,12 +219,59 @@ fn create_cache_directory(
     session_id: &str,
     cancelled: &AtomicBool,
 ) -> Result<CacheDirectory, SidecarError> {
-    let path = temp_dir().join(format!("genspark-ai-excel-{session_id}"));
-    let directory = CacheDirectory::create(path)?;
-    if cancelled.load(Ordering::Acquire) {
-        return Err(SidecarError::cancelled());
+    // wasm 浏览器形态：无磁盘，缓存目录退化为内存路径占位（recalc 落盘链路不走此形态）
+    #[cfg(target_family = "wasm")]
+    {
+        let _ = session_id;
+        if cancelled.load(Ordering::Acquire) {
+            return Err(SidecarError::cancelled());
+        }
+        return Ok(CacheDirectory::memory_placeholder());
     }
-    Ok(directory)
+    #[cfg(not(target_family = "wasm"))]
+    {
+        let path = temp_dir().join(format!("genspark-ai-excel-{session_id}"));
+        let directory = CacheDirectory::create(path)?;
+        if cancelled.load(Ordering::Acquire) {
+            return Err(SidecarError::cancelled());
+        }
+        Ok(directory)
+    }
+}
+
+/// wasm 浏览器形态的工作簿字节注册表：open_bytes 时登记，后续惰性解析
+/// （index_worksheet/read_media 等）按虚拟路径取字节，替代磁盘读取。
+#[cfg(target_family = "wasm")]
+static WASM_WORKBOOKS: std::sync::OnceLock<
+    std::sync::Mutex<std::collections::HashMap<PathBuf, std::sync::Arc<Vec<u8>>>>,
+> = std::sync::OnceLock::new();
+
+#[cfg(target_family = "wasm")]
+fn wasm_workbooks(
+) -> &'static std::sync::Mutex<std::collections::HashMap<PathBuf, std::sync::Arc<Vec<u8>>>> {
+    WASM_WORKBOOKS.get_or_init(|| std::sync::Mutex::new(std::collections::HashMap::new()))
+}
+
+/// 打开工作簿归档：非 wasm 从磁盘读；wasm 从内存注册表取。
+pub(crate) fn open_workbook_archive(
+    workbook_path: &Path,
+) -> Result<ZipArchive<std::io::Cursor<Vec<u8>>>, SidecarError> {
+    #[cfg(target_family = "wasm")]
+    {
+        let map = wasm_workbooks()
+            .lock()
+            .map_err(|_| SidecarError::Io("workbook registry lock".into()))?;
+        let bytes = map
+            .get(workbook_path)
+            .ok_or_else(|| SidecarError::Io("workbook bytes not in wasm registry".into()))?;
+        let owned: Vec<u8> = (**bytes).clone();
+        Ok(ZipArchive::new(std::io::Cursor::new(owned))?)
+    }
+    #[cfg(not(target_family = "wasm"))]
+    {
+        let bytes = std::fs::read(workbook_path)?;
+        Ok(ZipArchive::new(std::io::Cursor::new(bytes))?)
+    }
 }
 
 pub struct WorkbookSessions {
@@ -223,7 +283,7 @@ pub struct WorkbookSessions {
 /// runs so the open fails with an explanation instead of "invalid Zip
 /// archive: Could not find EOCD" (genoffice#2076). The file cursor is rewound so the
 /// caller can keep reading from the start.
-fn is_ole2_container(file: &mut File) -> std::io::Result<bool> {
+fn is_ole2_container<R: std::io::Read + std::io::Seek>(file: &mut R) -> std::io::Result<bool> {
     const OLE2_MAGIC: [u8; 8] = [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
     let mut magic = [0u8; 8];
     let read = file.read(&mut magic)?;
@@ -272,8 +332,32 @@ impl WorkbookSessions {
                 "This workbook is password-protected and must be decrypted by the host application.".into(),
             ));
         }
-        let mut archive = ZipArchive::new(file)?;
-        let workbook_path = canonical_path.clone();
+        let mut bytes = Vec::new();
+        std::io::Read::read_to_end(&mut file, &mut bytes)?;
+        self.open_bytes_with_locale(bytes, canonical_path, locale, short_date_format, cancelled)
+    }
+
+    /// 字节直开（WASM/浏览器宿主主入口）：与文件打开完全同构（ZipArchive<Cursor<Vec<u8>>>）。
+    /// `workbook_path` 仅作会话内簿记（保存回写路径），无磁盘访问。
+    pub fn open_bytes_with_locale(
+        &mut self,
+        bytes: Vec<u8>,
+        workbook_path: PathBuf,
+        locale: &str,
+        short_date_format: Option<&str>,
+        cancelled: &AtomicBool,
+    ) -> Result<WorkbookMetadata, SidecarError> {
+        #[cfg(target_family = "wasm")]
+        if let Ok(mut map) = wasm_workbooks().lock() {
+            map.insert(workbook_path.clone(), std::sync::Arc::new(bytes.clone()));
+        }
+        let mut cursor = std::io::Cursor::new(bytes);
+        if is_ole2_container(&mut cursor)? {
+            return Err(SidecarError::Workbook(
+                "This workbook is password-protected and must be decrypted by the host application.".into(),
+            ));
+        }
+        let mut archive = ZipArchive::new(cursor)?;
         archive::validate_entries(&mut archive)?;
         // The archive is open and validated and nothing has been written to
         // disk yet, so abandoning here costs only the parse already done.
@@ -496,7 +580,7 @@ impl WorkbookSessions {
         }
         let session_id = Uuid::new_v4().to_string();
         let mut cache_directory = create_cache_directory(&session_id, cancelled)?;
-        let name = canonical_path
+        let name = workbook_path
             .file_name()
             .and_then(|value| value.to_str())
             .unwrap_or("workbook.xlsx")
@@ -655,8 +739,7 @@ impl WorkbookSessions {
             .map(str::to_owned)
             .or_else(|| session.header_footer_picture_path(visual_id))
             .ok_or_else(|| SidecarError::InvalidRequest("Unknown workbook image.".into()))?;
-        let file = File::open(&session.path)?;
-        let mut archive = ZipArchive::new(file)?;
+        let mut archive = open_workbook_archive(&session.path)?;
         visuals::read_media(&mut archive, &media_path)
     }
 }
@@ -875,10 +958,31 @@ impl WorkbookSession {
                 .filter_map(|chunk| index.chunk_files.get(&chunk).cloned())
                 .collect::<Vec<_>>()
         };
+        #[cfg(target_family = "wasm")]
+        let index_memory = index.memory_chunks.clone();
         drop(index);
 
         let mut cells = Vec::new();
         let mut rows = Vec::new();
+        #[cfg(target_family = "wasm")]
+        {
+            // wasm：从内存 chunk 取
+            for (idx, chunk) in &index_memory {
+                if *idx < first_chunk || *idx > last_chunk {
+                    continue;
+                }
+                cells.extend(chunk.cells.iter().filter(|cell| {
+                    cell.row >= range.start_row
+                        && cell.row <= range.end_row
+                        && cell.column >= range.start_column
+                        && cell.column <= range.end_column
+                }).cloned());
+                rows.extend(chunk.rows.iter().filter(|row| {
+                    row.row >= range.start_row && row.row <= range.end_row
+                }).cloned());
+            }
+        }
+        #[cfg(not(target_family = "wasm"))]
         for path in paths {
             let file = File::open(path)?;
             let chunk: ChunkData = serde_json::from_reader(BufReader::new(file))?;
@@ -1000,6 +1104,9 @@ struct SheetIndex {
     complete: bool,
     error: Option<String>,
     chunk_files: HashMap<usize, PathBuf>,
+    /// wasm 浏览器形态的内存 chunk 存储（无磁盘缓存时的等价物）
+    #[cfg(target_family = "wasm")]
+    memory_chunks: HashMap<usize, crate::ChunkData>,
     merges: Vec<MergedRange>,
     hyperlinks: Vec<HyperlinkRecord>,
     conditional_rules: Vec<ConditionalRule>,

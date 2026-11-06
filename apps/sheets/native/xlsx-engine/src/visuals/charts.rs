@@ -39,7 +39,7 @@ pub(crate) fn flat_plot_name(node: Node<'_, '_>) -> Option<&'static str> {
 }
 
 pub(crate) fn read_chart(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     chart_path: &str,
     colors: &ColorContext,
     formats: &mut SourceFormats,
@@ -127,7 +127,7 @@ fn is_numeric_ref(node: &Node<'_, '_>) -> bool {
 /// Every `c:f` reference in a chart part, so the source-format lookup can be
 /// warmed in one worksheet pass instead of one prefix scan per reference.
 pub(crate) fn chart_formula_references(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     chart_path: &str,
 ) -> Vec<String> {
     let Ok(xml) = read_xml(archive, chart_path) else {

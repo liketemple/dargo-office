@@ -4,7 +4,7 @@
 use super::*;
 
 pub fn read_styles(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     colors: &ColorContext,
     theme_fonts: Option<&ThemeFonts>,
     locale: &str,

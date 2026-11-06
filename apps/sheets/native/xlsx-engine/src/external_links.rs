@@ -181,11 +181,11 @@ const MAX_INLINE_CELLS: u64 = 65_536;
 /// Parses the workbook's external links in `[n]` index order.
 fn parse_external_links(workbook: &Path) -> Result<Vec<LinkEntry>, SidecarError> {
     let mut links = Vec::new();
-    let file = match std::fs::File::open(workbook) {
-        Ok(file) => file,
+    let bytes = match std::fs::read(workbook) {
+        Ok(bytes) => bytes,
         Err(_) => return Ok(links),
     };
-    let mut archive = zip::ZipArchive::new(file)?;
+    let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bytes))?;
     let (workbook_xml, rels_xml) = match (
         crate::xml_util::read_zip_string(&mut archive, "xl/workbook.xml"),
         crate::xml_util::read_zip_string(&mut archive, "xl/_rels/workbook.xml.rels"),
@@ -262,7 +262,7 @@ fn external_sheet_names(part_xml: &str) -> Vec<String> {
 
 /// The externalLinkPath target of one externalLink part's own rels — the
 /// stored source path (`file:///C:/…`, a relative path, an UNC spelling).
-fn external_link_path(archive: &mut zip::ZipArchive<std::fs::File>, part: &str) -> Option<String> {
+fn external_link_path(archive: &mut zip::ZipArchive<std::io::Cursor<Vec<u8>>>, part: &str) -> Option<String> {
     let (directory, file_name) = part.rsplit_once('/')?;
     let rels = format!("{directory}/_rels/{file_name}.rels");
     let rels_xml = crate::xml_util::read_zip_string(archive, &rels).ok()?;
@@ -1184,11 +1184,11 @@ pub(crate) fn read_external_link_usage(
     workbook: &Path,
 ) -> Result<Vec<ExternalLinkUsage>, SidecarError> {
     let mut usages: Vec<ExternalLinkUsage> = Vec::new();
-    let file = match std::fs::File::open(workbook) {
-        Ok(file) => file,
+    let bytes = match std::fs::read(workbook) {
+        Ok(bytes) => bytes,
         Err(_) => return Ok(usages),
     };
-    let mut archive = zip::ZipArchive::new(file)?;
+    let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bytes))?;
     let (workbook_xml, rels_xml) = match (
         crate::xml_util::read_zip_string(&mut archive, "xl/workbook.xml"),
         crate::xml_util::read_zip_string(&mut archive, "xl/_rels/workbook.xml.rels"),

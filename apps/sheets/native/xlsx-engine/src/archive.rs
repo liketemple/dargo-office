@@ -238,7 +238,8 @@ pub fn save_archive(
     let target_file = writer.finish()?;
     sync_best_effort(&target_file)?;
 
-    let mut saved = ZipArchive::new(File::open(target_path)?)?;
+    let bytes = std::fs::read(target_path)?;
+    let mut saved = ZipArchive::new(std::io::Cursor::new(bytes))?;
     Ok(SaveArchiveResult {
         before_entries,
         after_entries: manifest_of(&mut saved)?,
@@ -456,7 +457,7 @@ pub(crate) fn canonical_entry_name(raw: &str) -> Option<String> {
     Some(name)
 }
 
-pub(crate) fn validate_entries(archive: &mut ZipArchive<File>) -> Result<(), SidecarError> {
+pub(crate) fn validate_entries(archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>) -> Result<(), SidecarError> {
     if archive.len() > MAX_ENTRY_COUNT {
         return Err(SidecarError::Workbook(
             "Workbook contains too many ZIP entries.".into(),
@@ -478,15 +479,16 @@ pub(crate) fn validate_entries(archive: &mut ZipArchive<File>) -> Result<(), Sid
     Ok(())
 }
 
-fn open_validated(path: &Path) -> Result<ZipArchive<File>, SidecarError> {
-    let mut archive = ZipArchive::new(File::open(path)?)?;
+fn open_validated(path: &Path) -> Result<ZipArchive<std::io::Cursor<Vec<u8>>>, SidecarError> {
+    let bytes = std::fs::read(path)?;
+    let mut archive = ZipArchive::new(std::io::Cursor::new(bytes))?;
     validate_entries(&mut archive)?;
     Ok(archive)
 }
 
 /// Canonical name of every entry, first occurrence winning when two raw
 /// names collapse to the same canonical one (matches `zip_entry` lookup).
-fn canonical_names(archive: &ZipArchive<File>) -> Vec<Option<String>> {
+fn canonical_names(archive: &ZipArchive<std::io::Cursor<Vec<u8>>>) -> Vec<Option<String>> {
     let mut seen = HashSet::new();
     (0..archive.len())
         .map(|index| {
@@ -497,7 +499,7 @@ fn canonical_names(archive: &ZipArchive<File>) -> Vec<Option<String>> {
         .collect()
 }
 
-fn manifest_of(archive: &mut ZipArchive<File>) -> Result<Vec<ArchiveEntry>, SidecarError> {
+fn manifest_of(archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>) -> Result<Vec<ArchiveEntry>, SidecarError> {
     let names = canonical_names(archive);
     let mut entries = Vec::with_capacity(archive.len());
     for (index, name) in names.into_iter().enumerate() {
@@ -602,7 +604,8 @@ mod tests {
             .map(|e| e.name.as_str())
             .collect();
         assert_eq!(after, ["keep/a.xml", "replace/b.xml"]);
-        let mut saved = ZipArchive::new(File::open(&target).unwrap()).unwrap();
+        let bytes = std::fs::read(&target).unwrap();
+        let mut saved = ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
         let mut content = String::new();
         saved
             .by_name("replace/b.xml")
@@ -663,7 +666,8 @@ mod tests {
             .unwrap();
         assert_eq!(untouched_before, untouched_after);
 
-        let mut saved = ZipArchive::new(File::open(&target).unwrap()).unwrap();
+        let bytes = std::fs::read(&target).unwrap();
+        let mut saved = ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
         assert_eq!(read_entry(&mut saved, "replace/b.xml"), "<b>new</b>");
         assert_eq!(read_entry(&mut saved, "added/d.xml"), "<d>added</d>");
         assert_eq!(read_entry(&mut saved, "keep/a.xml"), "<a>untouched</a>");
@@ -753,7 +757,7 @@ mod tests {
         assert!(error.to_string().contains("missing"));
     }
 
-    fn read_entry(archive: &mut ZipArchive<File>, name: &str) -> String {
+    fn read_entry(archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>, name: &str) -> String {
         let mut entry = archive.by_name(name).unwrap();
         let mut content = String::new();
         entry.read_to_string(&mut content).unwrap();
