@@ -219,3 +219,32 @@
   }
   console.info('[web-shim] GenOffice DesktopApi 浏览器垫片已激活', pendingDoc ? '带文档:' + pendingDoc.name : '空白文档')
 })()
+
+// ---- 品牌覆盖（eos 嵌入形态 ?embed=1）：Genspark → Dargo ----
+// 仅 DOM 文本层改写（源仓不动，上游更新零冲突）；独立调试形态保持上游原文。
+;(function () {
+  if (new URLSearchParams(location.search).get('embed') !== '1') return
+  const rebrand = (root) => {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+    const hits = []
+    while (walker.nextNode()) {
+      const n = walker.currentNode
+      if (n.nodeValue.includes('Genspark') && !/^(script|style)$/i.test(n.parentElement?.tagName || ''))
+        hits.push(n)
+    }
+    for (const n of hits) n.nodeValue = n.nodeValue.replace(/Genspark/g, 'Dargo')
+  }
+  const start = () => {
+    rebrand(document.body)
+    new MutationObserver((muts) => {
+      for (const m of muts) {
+        if (m.type === 'childList') for (const n of m.addedNodes) if (n.nodeType === 1) rebrand(n)
+        else if (m.type === 'characterData' && m.target.nodeValue?.includes('Genspark'))
+          m.target.nodeValue = m.target.nodeValue.replace(/Genspark/g, 'Dargo')
+      }
+    }).observe(document.body, { childList: true, subtree: true, characterData: true })
+    console.info('[web-shim] 品牌覆盖激活（Genspark → Dargo）')
+  }
+  if (document.body) start()
+  else document.addEventListener('DOMContentLoaded', start)
+})()

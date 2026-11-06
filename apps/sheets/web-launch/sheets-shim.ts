@@ -297,4 +297,31 @@ if (!g.global) g.global = globalThis
   ;(window as any).nativeSpell = { available: false }
 
   console.info('[sheets-shim] DesktopApi 浏览器垫片已激活', pendingSrc ? '带文档:' + pendingName : '空白')
+
+  // ---- 品牌覆盖（eos 嵌入形态 ?embed=1）：Genspark → Dargo（DOM 文本层，源仓不动）----
+  if (q.get('embed') === '1') {
+    const rebrand = (root: Node) => {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+      const hits: Text[] = []
+      while (walker.nextNode()) {
+        const n = walker.currentNode as Text
+        if (n.nodeValue.includes('Genspark') && !/^(script|style)$/i.test((n.parentElement as HTMLElement)?.tagName || ''))
+          hits.push(n)
+      }
+      for (const n of hits) n.nodeValue = n.nodeValue.replace(/Genspark/g, 'Dargo')
+    }
+    const startRebrand = () => {
+      rebrand(document.body)
+      new MutationObserver((muts) => {
+        for (const m of muts) {
+          if (m.type === 'childList') for (const n of m.addedNodes) if (n.nodeType === 1) rebrand(n)
+          else if (m.type === 'characterData' && m.target.nodeValue?.includes('Genspark'))
+            ;(m.target as Text).nodeValue = m.target.nodeValue.replace(/Genspark/g, 'Dargo')
+        }
+      }).observe(document.body, { childList: true, subtree: true, characterData: true })
+      console.info('[shim] 品牌覆盖激活（Genspark → Dargo）')
+    }
+    if (document.body) startRebrand()
+    else document.addEventListener('DOMContentLoaded', startRebrand)
+  }
 })()
