@@ -600,7 +600,8 @@ mod tests {
     use zip::write::SimpleFileOptions;
 
     fn read_entry(path: &Path, name: &str) -> String {
-        let mut archive = zip::ZipArchive::new(File::open(path).unwrap()).unwrap();
+        let bytes = std::fs::read(path).unwrap();
+        let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
         let mut entry = archive.by_name(name).unwrap();
         let mut content = String::new();
         entry.read_to_string(&mut content).unwrap();
@@ -608,7 +609,8 @@ mod tests {
     }
 
     fn read_bytes(path: &Path, name: &str) -> Vec<u8> {
-        let mut archive = zip::ZipArchive::new(File::open(path).unwrap()).unwrap();
+        let bytes = std::fs::read(path).unwrap();
+        let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
         let mut entry = archive.by_name(name).unwrap();
         let mut content = Vec::new();
         entry.read_to_end(&mut content).unwrap();

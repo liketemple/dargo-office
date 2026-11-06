@@ -1,0 +1,10 @@
+<!doctype html><html><body><script>
+console.info('[ft] page booted')
+const t0 = Date.now()
+fetch('http://localhost:8888/fv-samples/sample.docx')
+  .then(r => console.info('[ft] status', r.status, Date.now()-t0+'ms'))
+  .catch(e => console.warn('[ft] failed', String(e), Date.now()-t0+'ms'))
+fetch('http://localhost:8888/fv-samples/sample.pdf')
+  .then(r => console.info('[ft] pdf status', r.status, Date.now()-t0+'ms'))
+  .catch(e => console.warn('[ft] pdf failed', String(e)))
+</script></body></html>

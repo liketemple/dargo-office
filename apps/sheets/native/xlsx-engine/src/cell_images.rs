@@ -6,12 +6,12 @@ pub(crate) const MAX_CELL_IMAGES: usize = 500;
 
 /// WPS image names resolve through cellimages.xml and its relationships. Like
 /// optional Excel richData, malformed or missing picture parts are ignored.
-pub(crate) fn read_wps_cell_images(archive: &mut ZipArchive<File>) -> HashMap<String, String> {
+pub(crate) fn read_wps_cell_images(archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>) -> HashMap<String, String> {
     read_wps_cell_images_inner(archive).unwrap_or_default()
 }
 
 fn read_wps_cell_images_inner(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
 ) -> Result<HashMap<String, String>, SidecarError> {
     const PART: &str = "xl/cellimages.xml";
     let Some(xml) = visuals::read_optional_xml(archive, PART)? else {
@@ -69,7 +69,7 @@ fn dispimg_name(formula: &str) -> Option<&str> {
 /// One record per cell, even when several WPS formulas reuse one image name.
 /// Empty cells cannot capture a later cell's formula.
 pub(crate) fn read_sheet_cell_images(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     worksheet_path: &str,
     images_by_vm: &HashMap<u32, String>,
     images_by_name: &HashMap<String, String>,

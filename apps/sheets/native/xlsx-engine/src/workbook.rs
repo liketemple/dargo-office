@@ -5,7 +5,7 @@
 use super::*;
 
 pub(crate) fn read_sheet_declarations(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
 ) -> Result<
     (
         Vec<SheetDeclaration>,
@@ -79,7 +79,7 @@ pub(crate) fn read_sheet_declarations(
 }
 
 pub(crate) fn read_workbook_relationships(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
 ) -> Result<HashMap<String, String>, SidecarError> {
     let xml = read_zip_string(archive, "xl/_rels/workbook.xml.rels")?;
     let mut reader = Reader::from_str(&xml);
@@ -158,7 +158,7 @@ pub(crate) fn normal_view_zoom(
 }
 
 pub(crate) fn read_sheet_dimensions(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     worksheet_path: &str,
     colors: &ColorContext,
     count_budget: &mut usize,
@@ -503,7 +503,7 @@ pub(crate) fn dimensions_from_reference(reference: &str) -> Result<(usize, usize
 }
 
 pub(crate) fn read_shared_strings(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     colors: &ColorContext,
 ) -> Result<Vec<SharedString>, SidecarError> {
     let Ok(entry) = zip_entry(archive, "xl/sharedStrings.xml") else {
@@ -655,7 +655,7 @@ pub(crate) struct SheetPrintNames {
 }
 
 pub(crate) fn read_defined_names(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
 ) -> Result<
     (
         Vec<DefinedName>,

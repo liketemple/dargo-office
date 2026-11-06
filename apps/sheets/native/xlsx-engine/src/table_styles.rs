@@ -48,7 +48,7 @@ pub(crate) struct CustomTablePalette {
 
 /// styles.xml `<tableStyles>` → per-style band palette.
 pub(crate) fn read_custom_table_styles(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     dxf_styles: &[visuals::CellStyle],
 ) -> HashMap<String, CustomTablePalette> {
     let mut palettes = HashMap::new();
@@ -679,7 +679,7 @@ pub(crate) fn builtin_table_palette(
 }
 
 pub(crate) fn read_sheet_tables(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     worksheet_path: &str,
     colors: &ColorContext,
     custom_styles: &HashMap<String, CustomTablePalette>,

@@ -30,7 +30,7 @@ pub(crate) fn argb_to_hex(value: &str) -> Option<String> {
 }
 
 pub(crate) fn read_sheet_sparklines(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     worksheet_path: &str,
 ) -> Result<Vec<SparklineGroupInfo>, SidecarError> {
     let entry = zip_entry(archive, worksheet_path)?;

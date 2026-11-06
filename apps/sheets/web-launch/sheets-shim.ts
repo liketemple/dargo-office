@@ -84,9 +84,11 @@ if (!g.global) g.global = globalThis
   const callable: any = new Proxy(function () {} as any, {
     get(_t, p) {
       if (p === Symbol.toPrimitive || typeof p === 'symbol') return undefined
+      // 真异步：回调抛错变成 rejected promise（调用方的 .catch 能接住），
+      // 而不是同步穿透把调用函数本身打死。
       if (p === 'then')
         return (onFulfilled: (v: unknown) => unknown) =>
-          Promise.resolve(onFulfilled ? onFulfilled(undefined) : undefined)
+          Promise.resolve().then(() => (onFulfilled ? onFulfilled(undefined) : undefined))
       if (p === 'catch') return () => Promise.resolve(undefined)
       if (p === 'finally') return (cb: any) => Promise.resolve(cb ? cb() : undefined)
       return callable
@@ -97,18 +99,12 @@ if (!g.global) g.global = globalThis
   })
 
   let pendingSrc: string | null = q.get('src')
-  let selectInFlight: Promise<unknown> | null = null
   let pendingName: string = q.get('name') || 'workbook.xlsx'
   let sessionMeta: any = null // open 应答回存的 sheets 元数据
 
   const api: Record<string, unknown> = {
     // ---- 打开 ----
-    hasQueuedWorkbook: async () => {
-      // React StrictMode 双挂载防竞争：等 in-flight 的 selectWorkbook 完成再答
-      // （否则第二次 hasQueuedWorkbook=true → 第二次 selectWorkbook=null → 取消第一次）
-      if (selectInFlight) await selectInFlight
-      return !!pendingSrc
-    },
+    hasQueuedWorkbook: async () => !!pendingSrc,
     listWorkbookConnections: async () => ({ connections: [] }),
     readWorkbookExternalLinks: async () => ({ links: [], usages: [], suggestions: [] }),
     onMenuAction: () => () => {},
@@ -129,7 +125,7 @@ if (!g.global) g.global = globalThis
         const sha256 = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('')
         const result = {
           sessionId: r.sessionId,
-          name: pendingName.replace(/\.[^.]+$/, ''),
+          name: pendingName,
           path: pendingName,
           sha256,
           fileBytes: bytes.byteLength,
@@ -141,9 +137,15 @@ if (!g.global) g.global = globalThis
           visuals: r.visuals ?? [],
           definedNames: r.definedNames ?? [],
           normalFontName: r.normalFontName,
-          workbookProtection: r.workbookProtection
+          workbookProtection: r.workbookProtection,
+          readOnly: false,
+          needsSaveAs: false,
+          unsavedNew: true,
+          date1904: r.date1904 ?? false,
+          shortDateFormat: r.shortDateFormat,
+          themeColors: r.themeColors,
+          themeFonts: r.themeFonts
         }
-        console.warn('[TRACE] selectWorkbook returning:', typeof result, result?.name, 'sheets:', result?.sheets?.length)
         return result
       } catch (e) {
         console.error('[sheets-shim] open 失败', e)
@@ -157,6 +159,11 @@ if (!g.global) g.global = globalThis
     selectWorkbooksForMerge: async () => null,
 
     // ---- 引擎读 ----
+    // 引擎不提取 redaction 部件：按「文件无脱敏标记」作答（status:'absent'）。
+    // 缺了这个，callable 兜底的 .then(undefined) 会让 redactionSessionFor 读
+    // undefined.status 抛 TypeError，把 openLazyWorkbook 同步打死——
+    // loadWorkbookSkeleton 不执行，Univer 停在 initialSnapshot（Sheet1/单sheet/默认行高列宽）。
+    readWorkbookRedactions: async () => ({ status: 'absent' }),
     readWorkbookRange: async (request: any) => {
       const cmd = {
         version: 1,
@@ -201,8 +208,10 @@ if (!g.global) g.global = globalThis
         colBreaks: r.colBreaks || [],
         protectedRanges: r.protectedRanges || [],
         pageSetup: r.pageSetup,
-        indexedThroughRow: r.indexedThroughRow,
-        indexingComplete: r.indexingComplete
+        // 关键：renderer 靠这两个字段判断流式加载是否完成（停止「正在流式加载」提示）。
+        // 引擎行协议序列化用 camelCase（serde rename_all），两个都有值。
+        indexedThroughRow: r.indexedThroughRow ?? null,
+        indexingComplete: r.indexingComplete ?? false
       }
     },
     readWorkbookFormulaCells: async (request: any) => {
@@ -255,16 +264,6 @@ if (!g.global) g.global = globalThis
     onFontsChanged: () => () => {},
     onHistoryChanged: () => () => {},
     onDeckChanged: () => () => {},
-  }
-
-  // 包装 selectWorkbook 为 in-flight 追踪版
-  const rawSelect = api.selectWorkbook
-  api.selectWorkbook = (...args: unknown[]) => {
-    const p = Promise.resolve(rawSelect(...(args as []))).finally(() => {
-      if (selectInFlight === p) selectInFlight = null
-    })
-    selectInFlight = p
-    return p
   }
 
   ;(window as any).desktopApi = new Proxy(api, {

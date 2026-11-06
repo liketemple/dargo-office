@@ -737,7 +737,7 @@ pub struct ThemeFonts {
 }
 
 pub fn read_theme_fonts(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
 ) -> Result<Option<ThemeFonts>, SidecarError> {
     let Some(xml) = read_optional_xml(archive, "xl/theme/theme1.xml")? else {
         return Ok(None);
@@ -822,7 +822,7 @@ fn is_chart_part(name: &str) -> bool {
 }
 
 pub fn read_visual_objects(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     sheets: &[SheetVisualSource],
     colors: &ColorContext,
     formats: &mut SourceFormats,
@@ -974,7 +974,7 @@ pub fn read_visual_objects(
 /// Slicer/timeline part name → caption for the sheet's `xl/slicers/*.xml`
 /// and `xl/timelines/*.xml` parts; the drawing frame carries only the name.
 fn read_slicer_captions(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     worksheet_path: &str,
     relationships: &HashMap<String, Relationship>,
 ) -> HashMap<String, String> {
@@ -1032,7 +1032,7 @@ const EMU_PER_PIXEL: i64 = 9525;
 /// older writers emit the bare form only, in which case the legacy VML
 /// drawing supplies the anchor and preview picture.
 pub(crate) fn read_ole_objects(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     worksheet_path: &str,
     sheet_relationships: &HashMap<String, Relationship>,
 ) -> Result<Vec<OleObjectRecord>, SidecarError> {
@@ -1151,7 +1151,7 @@ fn vml_bool(value: &str) -> Option<bool> {
 /// Malformed VML (some third-party writers) is treated as absent rather
 /// than failing the whole workbook.
 pub(crate) fn read_vml_object_shapes(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     vml_path: &str,
 ) -> Result<HashMap<u32, VmlObjectShape>, SidecarError> {
     let Some(xml) = read_optional_xml(archive, vml_path)? else {
@@ -1272,7 +1272,7 @@ pub(crate) fn parse_vml_anchor(text: &str) -> Option<DrawingAnchor> {
 }
 
 pub fn read_media(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     media_path: &str,
 ) -> Result<MediaResult, SidecarError> {
     let mut entry = crate::zip_entry(archive, media_path)?;
@@ -1382,7 +1382,7 @@ fn pivot_row_kinds(document: &Document) -> String {
 }
 
 pub fn read_pivot_tables(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     worksheet_path: &str,
 ) -> Result<Vec<PivotPartInfo>, SidecarError> {
     let relationships = read_relationships(archive, worksheet_path)?;
@@ -1474,7 +1474,7 @@ pub struct ReadComment {
 /// picture, and a shape whose relationship no longer resolves is skipped
 /// rather than guessed at.
 fn note_picture_paths(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     worksheet_path: &str,
 ) -> HashMap<String, String> {
     let mut pictures = HashMap::new();
@@ -1565,7 +1565,7 @@ fn column_label(mut index: usize) -> String {
 }
 
 pub fn read_comments(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     worksheet_path: &str,
 ) -> Result<Vec<ReadComment>, SidecarError> {
     let relationships = read_relationships(archive, worksheet_path)?;
@@ -1656,7 +1656,7 @@ pub fn read_comments(
 /// part is what the viewer shows. Replies (entries with a parentId) attach
 /// to their cell's root in document order.
 fn read_threaded_comments(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     path: &str,
 ) -> Result<HashMap<String, ThreadInfo>, SidecarError> {
     let Some(xml) = read_optional_xml(archive, path)? else {
@@ -1711,7 +1711,7 @@ fn read_threaded_comments(
     Ok(threads)
 }
 
-fn read_persons(archive: &mut ZipArchive<File>) -> Result<HashMap<String, String>, SidecarError> {
+fn read_persons(archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>) -> Result<HashMap<String, String>, SidecarError> {
     let path = read_relationships(archive, "xl/workbook.xml")?
         .values()
         .find(|relationship| relationship.relationship_type.ends_with("/person"))
@@ -1747,7 +1747,7 @@ const MAX_HEADER_FOOTER_PICTURES: usize = 18;
 /// is not always well-formed XML — an unparseable part loses the pictures,
 /// not the sheet.
 pub fn read_header_footer_pictures(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     worksheet_path: &str,
     relationship_id: &str,
     sheet_index: usize,
@@ -1872,7 +1872,7 @@ fn css_length_pt(value: &str) -> Option<f64> {
 
 /// Package paths of the table parts attached to a worksheet.
 pub fn table_part_paths(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     worksheet_path: &str,
 ) -> Result<Vec<String>, SidecarError> {
     let relationships = read_relationships(archive, worksheet_path)?;
@@ -1888,7 +1888,7 @@ pub fn table_part_paths(
 /// Relationship id → hyperlink target for a worksheet part. Internal
 /// (location-only) links carry no relationship and are not included here.
 pub fn hyperlink_targets(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     worksheet_path: &str,
 ) -> Result<HashMap<String, String>, SidecarError> {
     Ok(read_relationships(archive, worksheet_path)?
@@ -1899,7 +1899,7 @@ pub fn hyperlink_targets(
 }
 
 pub(crate) fn read_relationships(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     source_path: &str,
 ) -> Result<HashMap<String, Relationship>, SidecarError> {
     let source = Path::new(source_path);
@@ -1942,7 +1942,7 @@ pub(crate) fn resolve_part_target(source_path: &str, target: &str) -> Result<Str
 /// String for every sheet on every open kept a copy of a 293 MB sheet resident
 /// in the sidecar (600 MB) for a check that usually finds nothing.
 fn read_worksheet_without_cells(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     path: &str,
 ) -> Result<String, SidecarError> {
     let entry = crate::zip_entry(archive, path)?;
@@ -1967,13 +1967,13 @@ fn read_worksheet_without_cells(
         .map_err(|_| SidecarError::Workbook(format!("{path} is not valid UTF-8.")))
 }
 
-fn read_xml(archive: &mut ZipArchive<File>, path: &str) -> Result<String, SidecarError> {
+fn read_xml(archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>, path: &str) -> Result<String, SidecarError> {
     read_optional_xml(archive, path)?
         .ok_or_else(|| SidecarError::Workbook(format!("Workbook is missing {path}.")))
 }
 
 pub(crate) fn read_optional_xml(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
     path: &str,
 ) -> Result<Option<String>, SidecarError> {
     let Ok(mut entry) = crate::zip_entry(archive, path) else {

@@ -14,12 +14,12 @@ use crate::visuals::{parse_document, read_optional_xml, read_relationships, reso
 /// `vm` attribute value (1-based valueMetadata record index) → media part
 /// path, for records whose rich value is a `_localImage`. Absent or
 /// malformed richData parts degrade to "no in-cell pictures".
-pub fn read_rich_value_images(archive: &mut ZipArchive<File>) -> HashMap<u32, String> {
+pub fn read_rich_value_images(archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>) -> HashMap<u32, String> {
     read_rich_value_images_inner(archive).unwrap_or_default()
 }
 
 fn read_rich_value_images_inner(
-    archive: &mut ZipArchive<File>,
+    archive: &mut ZipArchive<std::io::Cursor<Vec<u8>>>,
 ) -> Result<HashMap<u32, String>, SidecarError> {
     let workbook_rels = read_relationships(archive, "xl/workbook.xml")?;
     let part_by_type = |suffix: &str| {
