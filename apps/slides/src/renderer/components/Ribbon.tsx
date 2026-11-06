@@ -141,6 +141,9 @@ import { NO_ROTATION } from '@genoffice/pptx-engine/model3d'
 const IS_MAC = navigator.platform.toLowerCase().includes('mac')
 /** shell tab mode: the tab strip above owns traffic lights / caption buttons */
 const IN_TAB = new URLSearchParams(window.location.search).get('mode') === 'tab'
+// web-launch 宿主 iframe 带 ?embed=1：下载/导出归协同文档管理页，编辑器内隐藏导出入口。
+// Electron 桌面形态 URL 无此参数，零影响。
+const EMBED = new URLSearchParams(window.location.search).has('embed')
 
 type MainTab =
   | 'file'
@@ -1764,15 +1767,17 @@ export function Ribbon({
                 >
                   {t('aiNameFile')}
                 </button>
-                <button
-                  disabled={!hasDoc}
-                  onClick={() => {
-                    setFileOpen(false)
-                    onExportPdf()
-                  }}
-                >
-                  {t('ribbonFileExportPdf')}
-                </button>
+                {!EMBED && (
+                  <button
+                    disabled={!hasDoc}
+                    onClick={() => {
+                      setFileOpen(false)
+                      onExportPdf()
+                    }}
+                  >
+                    {t('ribbonFileExportPdf')}
+                  </button>
+                )}
                 <button
                   disabled={!hasDoc}
                   onClick={() => {
@@ -1782,24 +1787,28 @@ export function Ribbon({
                 >
                   {t('ribbonFilePrint')} <span className="file-menu-key">Ctrl+P</span>
                 </button>
-                <button
-                  disabled={!hasDoc}
-                  onClick={() => {
-                    setFileOpen(false)
-                    onExportImages()
-                  }}
-                >
-                  {t('ribbonFileExportImages')}
-                </button>
-                <button
-                  disabled={!hasDoc}
-                  onClick={() => {
-                    setFileOpen(false)
-                    onExportImagesJpg()
-                  }}
-                >
-                  {t('ribbonFileExportImagesJpg')}
-                </button>
+                {!EMBED && (
+                  <>
+                    <button
+                      disabled={!hasDoc}
+                      onClick={() => {
+                        setFileOpen(false)
+                        onExportImages()
+                      }}
+                    >
+                      {t('ribbonFileExportImages')}
+                    </button>
+                    <button
+                      disabled={!hasDoc}
+                      onClick={() => {
+                        setFileOpen(false)
+                        onExportImagesJpg()
+                      }}
+                    >
+                      {t('ribbonFileExportImagesJpg')}
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>

@@ -143,7 +143,8 @@ import { buildRenderSlide, type RenderSlide, type OpenedPptx } from '@genoffice/
     onChromePressed: () => () => {},
     setShowFullScreen: async () => {},
     getRecentFiles: async () => [],
-    getAutoSaveDefault: async () => 'on' as const,
+    // shortcut: 自动保存开着自己会每 30s+blur 触发一次注定失败的保存报错，M9 编辑落盘后恢复 'on'
+    getAutoSaveDefault: async () => 'off' as const,
     setAutoSavePref: async () => {},
     getAiPanelPrefs: async () => ({ textSize: 'md' as const, spellcheck: true }),
     setAiPanelPrefs: async (p: unknown) => p,
@@ -178,30 +179,10 @@ import { buildRenderSlide, type RenderSlide, type OpenedPptx } from '@genoffice/
     getTransition: async () => null,
     getAnimations: async () => [],
     aiGskStatus: async () => ({ loggedIn: false }) as unknown,
-    // save v1：回传宿主（MinIO）保存原始字节；带回执。编辑操作经引擎落盘 = M9
-    save: async () => {
-      if (window.parent === window) return { ok: false, error: 'web-shim: 无宿主' }
-      const bytes = originalBytes
-      if (!bytes) return { ok: false, error: '无已加载文档' }
-      return await new Promise((resolve) => {
-        const tag = 'save-' + Math.random().toString(36).slice(2)
-        const onReply = (ev: MessageEvent) => {
-          if (ev.data?.type === 'genoffice:save:result' && ev.data.tag === tag) {
-            window.removeEventListener('message', onReply)
-            resolve({ ok: !!ev.data.ok, error: ev.data.error })
-          }
-        }
-        window.addEventListener('message', onReply)
-        window.parent.postMessage(
-          { type: 'genoffice:save', tag, name: pendingDoc?.name || 'presentation.pptx', bytes },
-          '*'
-        )
-        setTimeout(() => {
-          window.removeEventListener('message', onReply)
-          resolve({ ok: false, error: '宿主保存超时' })
-        }, 30000)
-      })
-    },
+    // 诚实失败：垫片拿到的只有打开时的原始字节，postMessage 保存只会把
+    // 未编辑内容当新副本灌进 eos 桶（自动保存开着每 30s 一份）。编辑落盘 = M9。
+    save: async () => ({ ok: false, error: '幻灯片编辑落盘暂未开放（M9）' }),
+    saveAs: async () => ({ ok: false, error: '幻灯片编辑落盘暂未开放（M9）' }),
     fontDownload: async () => ({ ok: false, error: 'web-shim' }),
     fontInstallLocal: async () => ({ families: [] as string[] })
   }

@@ -242,7 +242,8 @@ if (!g.global) g.global = globalThis
     onThemeChanged: () => () => {},
     getDocumentTheme: async () => 'follow',
     onDocumentThemeChanged: () => () => {},
-    getAutoSaveDefault: async () => 'on',
+    // shortcut: 自动保存开着自己会每 30s 触发一次注定失败的保存，M9 编辑落盘后恢复 'on'
+    getAutoSaveDefault: async () => 'off',
     onAutoSaveDefaultChanged: () => () => {},
     getAiPanelPrefs: async () => ({ textSize: 'md', spellcheck: true }),
     setAiPanelPrefs: async (p: unknown) => p,
@@ -256,8 +257,11 @@ if (!g.global) g.global = globalThis
     updateWorkbookPassword: async () => ({ ok: false }),
 
     // ---- 保存 ----
-    saveWorkbook: async () => ({ ok: false, error: 'web-shim: 保存链未实装' }),
-    saveWorkbookAs: async () => ({ ok: false, error: 'web-shim' }),
+    // 真实保存路径是 saveWorkbookEdits（renderer 只调它，save-actions.ts:783/871）：
+    // 增量 journal 需引擎侧合并产新字节，web Worker 宿主尚无此层（M9）。
+    // 返回 { canceled: true } 是 workbookSaveResultSchema 的合法分支，
+    // 走 renderer 现成的「已取消」UX；缺字段对象会让 result.file.sha256 抛 TypeError。
+    saveWorkbookEdits: async () => ({ canceled: true }),
 
     // ---- 杂项 ----
     fontMetrics: async () => null,

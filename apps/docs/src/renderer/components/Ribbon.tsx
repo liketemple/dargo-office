@@ -544,6 +544,9 @@ const IS_MAC = navigator.platform.toLowerCase().includes('mac')
 const WIDTH_CASE_LANGS = new Set<Lang>(['zh', 'zh-TW', 'ja'])
 /** shell tab mode: the tab strip above owns traffic lights / caption buttons */
 const IN_TAB = new URLSearchParams(window.location.search).get('mode') === 'tab'
+// web-launch 宿主 iframe 带 ?embed=1：下载/导出归协同文档管理页，编辑器内隐藏转换组。
+// Electron 桌面形态 URL 无此参数，零影响。
+const EMBED = new URLSearchParams(window.location.search).has('embed')
 
 const TABS = (
   IS_MAC
@@ -2358,8 +2361,12 @@ function RibbonInner({
                 >
                   {t('ribbonNameWithAi')}
                 </button>
-                <div className="file-menu-sep" />
-                {convertItems}
+                {!EMBED && (
+                  <>
+                    <div className="file-menu-sep" />
+                    {convertItems}
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -3580,6 +3587,7 @@ function RibbonInner({
 
             <div className="ribbon-sep" />
 
+            {!EMBED && (
             <div className="ribbon-group">
               <div className="ribbon-group-items">
                 <div className="rb-split-wrap">
@@ -3605,6 +3613,7 @@ function RibbonInner({
               </div>
               <div className="ribbon-group-label">{t('ribbonConvert')}</div>
             </div>
+            )}
 
             <div className="ribbon-sep" />
 
