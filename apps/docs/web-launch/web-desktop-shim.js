@@ -226,22 +226,28 @@
   if (new URLSearchParams(location.search).get('embed') !== '1') return
   const rebrand = (root) => {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
-    const hits = []
     while (walker.nextNode()) {
-      const n = walker.currentNode
-      if (n.nodeValue.includes('Genspark') && !/^(script|style)$/i.test(n.parentElement?.tagName || ''))
-        hits.push(n)
+      try {
+        const n = walker.currentNode
+        const v = n?.nodeValue
+        if (!v || !v.includes('Genspark')) continue
+        if (/^(script|style)$/i.test(n.parentElement?.tagName || '')) continue
+        n.nodeValue = v.replace(/Genspark/g, 'Dargo')
+      } catch { /* 单节点失败继续 */ }
     }
-    for (const n of hits) n.nodeValue = n.nodeValue.replace(/Genspark/g, 'Dargo')
   }
   const start = () => {
     rebrand(document.body)
     new MutationObserver((muts) => {
-      for (const m of muts) {
-        if (m.type === 'childList') for (const n of m.addedNodes) if (n.nodeType === 1) rebrand(n)
-        else if (m.type === 'characterData' && m.target.nodeValue?.includes('Genspark'))
-          m.target.nodeValue = m.target.nodeValue.replace(/Genspark/g, 'Dargo')
-      }
+      try {
+        for (const m of muts) {
+          if (m.type === 'childList') for (const n of m.addedNodes) if (n.nodeType === 1) rebrand(n)
+          else if (m.type === 'characterData') {
+            const v = m.target?.nodeValue
+            if (v && v.includes('Genspark')) m.target.nodeValue = v.replace(/Genspark/g, 'Dargo')
+          }
+        }
+      } catch { /* 兜底：绝不抛出 observer */ }
     }).observe(document.body, { childList: true, subtree: true, characterData: true })
     console.info('[web-shim] 品牌覆盖激活（Genspark → Dargo）')
   }

@@ -559,24 +559,33 @@ if (!g.global) g.global = globalThis
 
   // ---- 品牌覆盖（eos 嵌入形态 ?embed=1）：Genspark → Dargo（DOM 文本层，源仓不动）----
   if (q.get('embed') === '1') {
+    // 空值防护 + try/catch：文本节点可能在遍历中被 React 置空（实测 null nodeValue
+    // 会在 observer 里循环抛错拖垮渲染——品牌覆盖绝不能成为页面故障源）
     const rebrand = (root: Node) => {
       const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
-      const hits: Text[] = []
       while (walker.nextNode()) {
-        const n = walker.currentNode as Text
-        if (n.nodeValue.includes('Genspark') && !/^(script|style)$/i.test((n.parentElement as HTMLElement)?.tagName || ''))
-          hits.push(n)
+        try {
+          const n = walker.currentNode as Text | null
+          const v = n?.nodeValue
+          if (!v || !v.includes('Genspark')) continue
+          if (/^(script|style)$/i.test((n.parentElement as HTMLElement)?.tagName || '')) continue
+          n.nodeValue = v.replace(/Genspark/g, 'Dargo')
+        } catch { /* 单节点失败继续 */ }
       }
-      for (const n of hits) n.nodeValue = n.nodeValue.replace(/Genspark/g, 'Dargo')
     }
     const startRebrand = () => {
       rebrand(document.body)
       new MutationObserver((muts) => {
-        for (const m of muts) {
-          if (m.type === 'childList') for (const n of m.addedNodes) if (n.nodeType === 1) rebrand(n)
-          else if (m.type === 'characterData' && m.target.nodeValue?.includes('Genspark'))
-            ;(m.target as Text).nodeValue = m.target.nodeValue.replace(/Genspark/g, 'Dargo')
-        }
+        try {
+          for (const m of muts) {
+            if (m.type === 'childList') for (const n of m.addedNodes) if (n.nodeType === 1) rebrand(n)
+            else if (m.type === 'characterData') {
+              const t = m.target as Text | null
+              const v = t?.nodeValue
+              if (v && v.includes('Genspark')) t.nodeValue = v.replace(/Genspark/g, 'Dargo')
+            }
+          }
+        } catch { /* 兜底：绝不抛出 observer */ }
       }).observe(document.body, { childList: true, subtree: true, characterData: true })
       console.info('[shim] 品牌覆盖激活（Genspark → Dargo）')
     }
