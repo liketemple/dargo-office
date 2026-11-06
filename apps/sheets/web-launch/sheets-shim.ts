@@ -9,6 +9,11 @@
  * - getLanguage / getTheme / 偏好族 → localStorage
  */
 import { Buffer } from 'buffer'
+// 与 Electron 主进程同构的归一化：workbookFileSchema.parse 会给引擎 serde
+// 省略的空数组字段补 .default([])（sparklines/cellImages/pivotTables…）。
+// 缺了这层，sheet.sparklines 是 undefined，编辑提交监听器读 .length 即抛
+// TypeError（App.tsx 编辑流水线每次提交必炸）。
+import { workbookFileSchema } from '../src/shared/desktop-api'
 
 const g = globalThis as Record<string, unknown>
 if (!g.Buffer) g.Buffer = Buffer
@@ -146,7 +151,9 @@ if (!g.global) g.global = globalThis
           themeColors: r.themeColors,
           themeFonts: r.themeFonts
         }
-        return result
+        // Electron 主进程在这一步做 workbookFileSchema.parse（sheets-main.ts
+        // openWorkbooksFromPaths），省略字段在此补默认——垫片同构照做。
+        return workbookFileSchema.parse(result)
       } catch (e) {
         console.error('[sheets-shim] open 失败', e)
         return null
