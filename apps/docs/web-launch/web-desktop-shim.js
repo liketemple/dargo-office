@@ -1,7 +1,8 @@
 /**
- * GenOffice Docs renderer 的浏览器垫片：实现 DesktopApi 的最小可运行子集。
+ * Dargo Docs renderer（原 GenOffice）的浏览器垫片：实现 DesktopApi 的最小可运行子集。
  * - 文档注入：?src=<编码URL>&name=<文件名> → consumePendingOpenDocx 返回该文件
  * - 保存：saveDocx/saveDocxAs → postMessage 给宿主（父窗口）+ 可选 Blob 下载
+ * - 锁定模式：?readonly=1 → 只读打开（禁输入/禁保存/禁选区复制）
  * - 偏好：localStorage 持久化（语言/主题/作者名/自动保存）
  * - 未实现的方法：安全 no-op / reject，renderer 已有降级路径
  */
@@ -18,6 +19,25 @@
   let consumed = false
   if (q.get('src')) {
     pendingDoc = { src: q.get('src'), name: q.get('name') || 'document.docx' }
+  }
+  // 锁定模式（宿主 &readonly=1）：只读打开。
+  // shortcut: 工具栏个别直改文档模型的动作拦不净，renderer 原生只读模式待后续里程碑
+  const locked = q.get('readonly') === '1'
+  if (locked) {
+    const style = document.createElement('style')
+    style.textContent =
+      '[contenteditable="true"]{pointer-events:none!important;user-select:none!important;}'
+    ;(document.head || document.documentElement).appendChild(style)
+    const blockEditable = (e) => {
+      const t = e.target
+      if (t && (t.isContentEditable || t.closest?.('[contenteditable="true"]'))) {
+        e.preventDefault()
+        e.stopPropagation()
+      }
+    }
+    document.addEventListener('beforeinput', blockEditable, true)
+    document.addEventListener('keydown', blockEditable, true)
+    console.info('[web-shim] 只读锁定模式（readonly=1）')
   }
   const notify = (kind, payload) => listeners[kind]?.forEach((h) => { try { h(payload) } catch {} })
 
@@ -41,19 +61,20 @@
 
   const saveViaHost = async (data, suggestedName) => {
     // 保存语义（2026-11-06 拍板）：仅经宿主回传服务器（MinIO），**禁止浏览器下载**。
-    // 带回执协议：宿主处理完（上传成功/失败）回复 genoffice:save:result，
+    // 带回执协议：宿主处理完（上传成功/失败）回复 file-editor:save:result，
     // 编辑器据此显示真实保存状态；无宿主（独立 :5199 调试形态）才退化为下载。
+    if (locked) return { ok: false, error: '只读模式：文档已锁定，不可保存' }
     if (window.parent !== window) {
       return await new Promise((resolve) => {
         const tag = 'save-' + Math.random().toString(36).slice(2)
         const onReply = (ev) => {
-          if (ev?.data?.type === 'genoffice:save:result' && ev.data.tag === tag) {
+          if (ev?.data?.type === 'file-editor:save:result' && ev.data.tag === tag) {
             window.removeEventListener('message', onReply)
             resolve({ ok: !!ev.data.ok, error: ev.data.error })
           }
         }
         window.addEventListener('message', onReply)
-        window.parent.postMessage({ type: 'genoffice:save', tag, name: suggestedName, bytes: data }, '*')
+        window.parent.postMessage({ type: 'file-editor:save', tag, name: suggestedName, bytes: data }, '*')
         setTimeout(() => {
           window.removeEventListener('message', onReply)
           resolve({ ok: false, error: '宿主保存超时（编辑器宿主页未响应）' })
@@ -79,7 +100,7 @@
     onThemeChanged: (h) => (listeners.theme.push(h), () => {}),
     getDocumentTheme: async () => prefGet('docTheme', 'follow'), // DocTheme 是字符串枚举 'follow'|'light'|'dark'
     onDocumentThemeChanged: (h) => (listeners.docTheme.push(h), () => {}),
-    getAutoSaveDefault: async () => prefGet('autoSave', 'on'),
+    getAutoSaveDefault: async () => prefGet('autoSave', locked ? 'off' : 'on'), // 锁定模式禁自动保存（免每 30s 保存失败提示）
     onAutoSaveDefaultChanged: () => () => {},
     getAuthorName: async () => prefGet('author', '轻舟用户'),
     onAuthorNameChanged: () => () => {},
