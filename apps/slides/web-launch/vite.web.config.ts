@@ -49,6 +49,18 @@ export default defineConfig({
       }
     }
   ],
+  // M9b/c：pptx-ops/pptx-engine 在浏览器跑，node: 系命名导入映射到 web-launch/shims
+  resolve: {
+    alias: [
+      { find: /^node:fs\/promises$/, replacement: fileURLToPath(new URL('./shims/node-fs-promises.ts', import.meta.url)) },
+      { find: /^node:fs$/, replacement: fileURLToPath(new URL('./shims/node-fs.ts', import.meta.url)) },
+      { find: /^node:path$/, replacement: fileURLToPath(new URL('./shims/node-path.ts', import.meta.url)) },
+      { find: /^node:crypto$/, replacement: fileURLToPath(new URL('./shims/node-crypto.ts', import.meta.url)) },
+      { find: /^node:zlib$/, replacement: fileURLToPath(new URL('./shims/node-zlib.ts', import.meta.url)) },
+      { find: /^node:stream$/, replacement: fileURLToPath(new URL('./shims/node-stream.ts', import.meta.url)) },
+      { find: /^buffer$/, replacement: fileURLToPath(new URL('./shims/buffer.ts', import.meta.url)) }
+    ]
+  },
   server: {
     port: 5200,
     strictPort: true,

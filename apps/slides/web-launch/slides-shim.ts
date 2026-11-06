@@ -8,7 +8,9 @@
  *   落盘编辑（savePptx 等）按需逐个实装
  */
 import { Buffer } from 'buffer'
-import { openPptx } from '@genoffice/pptx-engine'
+// M9b/c：编辑桥直跑 op 事务引擎（@genoffice/pptx-ops，58 op 纯 TS）+ 引擎保存
+import { openPptx, savePptx, commitSaved, findGroupChild } from '@genoffice/pptx-engine'
+import { runTxn, resolveGroupChildId } from '@genoffice/pptx-ops'
 import { buildRenderSlide, type RenderSlide, type OpenedPptx } from '@genoffice/pptx-render'
 
 ;(() => {
@@ -30,7 +32,12 @@ import { buildRenderSlide, type RenderSlide, type OpenedPptx } from '@genoffice/
     ? { src: q.get('src')!, name: q.get('name') || 'presentation.pptx' }
     : null
   let consumed = false
-  let originalBytes: Uint8Array | null = null // save v1：回存原始字节（编辑落盘=M9）
+  let originalBytes: Uint8Array | null = null // 打开时的原始字节（保存链基准）
+  // M9b 编辑会话：deck 模型 + 渲染宽度 + 脏标记（isDirty/保存判定）
+  let openedRef: OpenedPptx | null = null
+  let fitWidth = 960
+  let metaDirty = false
+  let currentName = 'presentation.pptx'
 
   // ---- 万能可调用代理（Docs 垫片三连修后的最终形态）----
   // 调用返回自身、属性访问返回自身；then() 返回真 Promise 且 resolve 到非 thenable 终值
@@ -84,6 +91,110 @@ import { buildRenderSlide, type RenderSlide, type OpenedPptx } from '@genoffice/
     )
   }
 
+  // ---- M9b 编辑桥：op 事务引擎胶水（slides-main 同构，去掉 Electron 会话/历史簿记）----
+  const EMU_PER_PX_96 = 9525
+  const EMU_PER_PT = 12700
+
+  /** 单页重建（事务后返回给 renderer 的 RenderSlide） */
+  function rebuildOne(idx: number): RenderSlide | null {
+    if (!openedRef) return null
+    const slide = (openedRef.deck.slides as any[])[idx]
+    if (!slide) return null
+    return buildRenderSlide(slide, openedRef.deck.size, {
+      fitWidthPx: fitWidth,
+      media: mediaResolver(openedRef, slide.path),
+      slideNo: idx + 1
+    })
+  }
+
+  /** 事务执行（数组或 {ops, isolation}；脏标记；undo/redo 簿记 v1 从简——见 shortcut 注释） */
+  function sessionTxn(req: any): any | null {
+    if (!openedRef) return null
+    const r = runTxn(openedRef as any, Array.isArray(req) ? { ops: req } : req)
+    if (!r.applied) return null
+    metaDirty = true
+    return r
+  }
+
+  /** px→EMU 变换载荷（slides-main transformPayload 同构，含组子元素坐标系换算） */
+  function transformPayload(slideIndex: number, fitWidthPx: number, item: any) {
+    if (!openedRef) return null
+    const slide = (openedRef.deck.slides as any[])[slideIndex]
+    if (!slide) return null
+    const childId = item.groupId ? resolveGroupChildId(slide, item.groupId, item.sourceId) : item.sourceId
+    const grpChild = item.groupId ? findGroupChild(slide, item.groupId, childId as any) : null
+    if (item.groupId && !grpChild) return null
+    const baseWidthPx = openedRef.deck.size.cx / EMU_PER_PX_96
+    const scale = fitWidthPx / baseWidthPx
+    const toEmu = (px: number) => Math.round((px / scale) * EMU_PER_PX_96)
+    let box: { x: number; y: number; cx: number; cy: number }
+    if (grpChild) {
+      const g = (grpChild as any).grp
+      const ch = g.childOffset
+      const chX = ch?.x ?? g.transform.offset.x
+      const chY = ch?.y ?? g.transform.offset.y
+      const gExt = g.transform.offset
+      const gsx = ch?.cx ? gExt.cx / ch.cx : 1
+      const gsy = ch?.cy ? gExt.cy / ch.cy : 1
+      box = {
+        x: toEmu(item.xPx / gsx) + chX,
+        y: toEmu(item.yPx / gsy) + chY,
+        cx: toEmu(item.wPx / gsx),
+        cy: toEmu(item.hPx / gsy)
+      }
+    } else {
+      box = { x: toEmu(item.xPx), y: toEmu(item.yPx), cx: toEmu(item.wPx), cy: toEmu(item.hPx) }
+    }
+    return {
+      op: 'setTransform' as const,
+      target: { slide: slideIndex, el: item.sourceId },
+      box,
+      rotDeg: item.rotationDeg,
+      ...(item.groupId ? { group: item.groupId } : { resizeTableGrid: true })
+    }
+  }
+
+  /** 全量 SlideUpdate（v1 简化：不做增量 diff，全部重建——shortcut: 大 deck 可按 buildSlideUpdate 增量化） */
+  function slideUpdate(): { order: string[]; slides: RenderSlide[] } | null {
+    if (!openedRef) return null
+    return {
+      order: (openedRef.deck.slides as any[]).map((sl) => sl.path),
+      slides: buildAllRenderSlides(openedRef, fitWidth)
+    }
+  }
+
+  /** M9c 保存：引擎序列化 → 宿主 postMessage（带回执）→ commitSaved 清脏 */
+  async function saveDeck(): Promise<{ ok: boolean; error?: string; slides?: RenderSlide[] }> {
+    if (!openedRef) return { ok: false, error: '无打开的文档' }
+    const bytes = await savePptx(openedRef)
+    const host = await saveViaHost(bytes)
+    if (!host.ok) return { ok: false, error: host.error }
+    commitSaved(openedRef)
+    metaDirty = false
+    originalBytes = bytes
+    console.info('[slides-shim] 保存完成', bytes.byteLength, 'B')
+    return { ok: true, slides: buildAllRenderSlides(openedRef, fitWidth) }
+  }
+
+  function saveViaHost(bytes: Uint8Array): Promise<{ ok: boolean; error?: string }> {
+    return new Promise((resolve) => {
+      if (window.parent === window) return resolve({ ok: false, error: '无宿主（独立调试形态）' })
+      const tag = 'save-' + Math.random().toString(36).slice(2)
+      const onReply = (ev: MessageEvent) => {
+        if (ev?.data?.type === 'file-editor:save:result' && ev.data.tag === tag) {
+          window.removeEventListener('message', onReply)
+          resolve({ ok: !!ev.data.ok, error: ev.data.error })
+        }
+      }
+      window.addEventListener('message', onReply)
+      window.parent.postMessage({ type: 'file-editor:save', tag, name: currentName, bytes }, '*')
+      setTimeout(() => {
+        window.removeEventListener('message', onReply)
+        resolve({ ok: false, error: '宿主保存超时（编辑器宿主页未响应）' })
+      }, 30000)
+    })
+  }
+
   async function openFromPending(fitWidthPx: number) {
     if (!pendingDoc) return null
     console.info('[slides-open] fetch 开始', pendingDoc.src.slice(0, 80))
@@ -91,9 +202,12 @@ import { buildRenderSlide, type RenderSlide, type OpenedPptx } from '@genoffice/
     if (!res.ok) throw new Error(`slides shim: 加载失败 ${res.status}`)
     const bytes = new Uint8Array(await res.arrayBuffer())
     console.info('[slides-open] 字节就绪', bytes.length, 'openPptx 调用…')
+    currentName = pendingDoc.name
     const opened = await openPptx(bytes)
     console.info('[slides-open] openPptx 返回, slides=', opened.deck.slides.length)
-    const slides = buildAllRenderSlides(opened, fitWidthPx || 960)
+    openedRef = opened
+    fitWidth = fitWidthPx || 960
+    const slides = buildAllRenderSlides(opened, fitWidth)
     console.info('[slides-shim] openPptx ✅', pendingDoc.name, `${slides.length} 页`)
     return {
       path: 'web://' + pendingDoc.name,
@@ -143,8 +257,8 @@ import { buildRenderSlide, type RenderSlide, type OpenedPptx } from '@genoffice/
     onChromePressed: () => () => {},
     setShowFullScreen: async () => {},
     getRecentFiles: async () => [],
-    // shortcut: 自动保存开着自己会每 30s+blur 触发一次注定失败的保存报错，M9 编辑落盘后恢复 'on'
-    getAutoSaveDefault: async () => 'off' as const,
+    // M9 已落盘：自动保存恢复（30s + 失焦），与桌面语义一致
+    getAutoSaveDefault: async () => 'on' as const,
     setAutoSavePref: async () => {},
     getAiPanelPrefs: async () => ({ textSize: 'md' as const, spellcheck: true }),
     setAiPanelPrefs: async (p: unknown) => p,
@@ -179,10 +293,127 @@ import { buildRenderSlide, type RenderSlide, type OpenedPptx } from '@genoffice/
     getTransition: async () => null,
     getAnimations: async () => [],
     aiGskStatus: async () => ({ loggedIn: false }) as unknown,
-    // 诚实失败：垫片拿到的只有打开时的原始字节，postMessage 保存只会把
-    // 未编辑内容当新副本灌进 eos 桶（自动保存开着每 30s 一份）。编辑落盘 = M9。
-    save: async () => ({ ok: false, error: '幻灯片编辑落盘暂未开放（M9）' }),
-    saveAs: async () => ({ ok: false, error: '幻灯片编辑落盘暂未开放（M9）' }),
+    // ---- M9b 编辑桥（op 事务引擎直跑；v1 覆盖高频编辑面，其余仍走万能代理）----
+    isDirty: () =>
+      !!metaDirty ||
+      !!openedRef?.deck.slides.some(
+        (sl: any) => sl.structureDirty || sl.elements.some((el: any) => el.dirty || el.dirtyTransform)
+      ),
+    // shortcut: 撤销/重做 v1 未接（需移植 session-state 历史快照）；批次钩子接受并忽略
+    beginHistoryBatch: () => true,
+    endHistoryBatch: () => true,
+    editText: (op: any) => {
+      const r = sessionTxn([
+        {
+          op: 'setText',
+          target: { slide: op.slideIndex, el: op.sourceId },
+          paragraphs: op.paragraphs,
+          ...(op.groupId ? { group: op.groupId } : {})
+        }
+      ])
+      return r ? rebuildOne(op.slideIndex) : null
+    },
+    editTransform: (op: any) => {
+      const payload = transformPayload(op.slideIndex, op.fitWidthPx ?? fitWidth, op)
+      if (!payload) return null
+      const r = sessionTxn([payload])
+      return r ? rebuildOne(op.slideIndex) : null
+    },
+    editTransformMulti: (op: any) => {
+      const ops: any[] = []
+      for (const item of op.items ?? []) {
+        const payload = transformPayload(op.slideIndex, op.fitWidthPx ?? fitWidth, item)
+        if (!payload) return null
+        ops.push(payload)
+      }
+      if (!ops.length) return null
+      const r = sessionTxn(ops)
+      return r ? rebuildOne(op.slideIndex) : null
+    },
+    batchEditTransform: (op: any) => {
+      if (!openedRef) return null
+      const baseWidthPx = openedRef.deck.size.cx / EMU_PER_PX_96
+      const scale = (op.fitWidthPx ?? fitWidth) / baseWidthPx
+      const toEmu = (px: number) => Math.round((px / scale) * EMU_PER_PX_96)
+      const r = sessionTxn(
+        (op.items ?? []).map((item: any) => ({
+          op: 'setTransform',
+          target: { slide: op.slideIndex, el: item.sourceId },
+          box: { x: toEmu(item.xPx), y: toEmu(item.yPx), cx: toEmu(item.wPx), cy: toEmu(item.hPx) },
+          rotDeg: item.rotationDeg,
+          resizeTableGrid: true
+        }))
+      )
+      return r ? rebuildOne(op.slideIndex) : null
+    },
+    addElement: (op: any) => {
+      if (!openedRef) return null
+      const baseWidthPx = openedRef.deck.size.cx / EMU_PER_PX_96
+      const scale = (op.fitWidthPx ?? fitWidth) / baseWidthPx
+      const toEmu = (px: number) => Math.round((px / scale) * EMU_PER_PX_96)
+      const paragraphs = op.paragraphs?.length
+        ? op.paragraphs
+        : op.text
+          ? String(op.text).split('\n').map((line: string) => ({ runs: [{ text: line }] }))
+          : undefined
+      const r = sessionTxn([
+        {
+          op: 'addElement',
+          target: { slide: op.slideIndex },
+          kind: op.kind,
+          offset: { x: toEmu(op.xPx), y: toEmu(op.yPx), cx: toEmu(op.wPx), cy: toEmu(op.hPx) },
+          ...(paragraphs ? { paragraphs } : {}),
+          ...(op.fillColor ? { fill: op.fillColor } : {}),
+          ...(op.stroke
+            ? { stroke: { color: op.stroke.color, widthEmu: Math.round(op.stroke.widthPt * EMU_PER_PT) } }
+            : {}),
+          ...(op.bodyPr ? { bodyPr: op.bodyPr } : {})
+        }
+      ])
+      if (!r) return null
+      const rebuilt = rebuildOne(op.slideIndex)
+      return rebuilt ? { slide: rebuilt, sourceId: r.records?.[0]?.created?.[0] } : null
+    },
+    deleteElement: (op: any) => {
+      const r = sessionTxn([{ op: 'deleteElement', target: { slide: op.slideIndex, el: op.sourceId } }])
+      return r ? rebuildOne(op.slideIndex) : null
+    },
+    deleteElements: (op: any) => {
+      const r = sessionTxn({
+        ops: (op.sourceIds ?? []).map((id: string) => ({
+          op: 'deleteElement',
+          target: { slide: op.slideIndex, el: id }
+        })),
+        isolation: 'per_op'
+      })
+      return r ? rebuildOne(op.slideIndex) : null
+    },
+    addBlankSlide: (op: any) => {
+      const r = sessionTxn([
+        { op: 'addBlankSlide', target: { slide: op.sourceIndex } },
+        ...(op.before ? [{ op: 'moveSlide', target: { slide: op.sourceIndex }, to: op.sourceIndex + 1 }] : [])
+      ])
+      if (!r) return null
+      fitWidth = op.fitWidthPx ?? fitWidth
+      return { ...slideUpdate(), index: op.before ? op.sourceIndex : op.sourceIndex + 1 }
+    },
+    deleteSlide: (op: any) => {
+      const r = sessionTxn([{ op: 'deleteSlide', target: { slide: op.slideIndex } }])
+      if (!r) return null
+      return slideUpdate()
+    },
+    duplicateSlides: (op: any) => {
+      const r = sessionTxn(
+        (op.indices ?? []).map((i: number) => ({ op: 'duplicateSlide', target: { slide: i } })),
+      )
+      if (!r) return null
+      return slideUpdate()
+    },
+    getRenderSlides: () => (openedRef ? buildAllRenderSlides(openedRef, fitWidth) : null),
+
+    // ---- M9c 保存：引擎序列化 → 宿主（协作服务版本留底）→ commitSaved ----
+    save: () => saveDeck(),
+    saveAs: () => saveDeck(),
     fontDownload: async () => ({ ok: false, error: 'web-shim' }),
     fontInstallLocal: async () => ({ families: [] as string[] })
   }
@@ -231,6 +462,31 @@ import { buildRenderSlide, type RenderSlide, type OpenedPptx } from '@genoffice/
     deleteChat: async () => {}
   }
   ;(window as any).aiNamingApi = { suggest: async () => null }
+  // 调试出口（E2E/联调）：deck 概览与首页文本元素定位
+  ;(window as any).__shimDebug = {
+    opened: () => !!openedRef,
+    name: () => currentName,
+    slideCount: () => openedRef?.deck.slides.length ?? 0,
+    // 首个文本元素的定位（slideIndex/sourceId/当前文本）
+    firstText: () => {
+      for (let i = 0; i < (openedRef?.deck.slides.length ?? 0); i++) {
+        const sl = (openedRef!.deck.slides as any[])[i]
+        for (const el of sl.elements ?? []) {
+          const anyEl = el as any
+          if (anyEl.text?.paragraphs) {
+            return {
+              slideIndex: i,
+              sourceId: anyEl.id,
+              text: anyEl.text.paragraphs
+                .flatMap((pa: any) => pa.runs.map((r: any) => r.text))
+                .join('')
+            }
+          }
+        }
+      }
+      return null
+    }
+  }
   console.info('[slides-shim] SlidesApi 浏览器垫片已激活', pendingDoc ? '带文档:' + pendingDoc.name : '空白')
 
   // ---- 品牌覆盖（eos 嵌入形态 ?embed=1）：Genspark → Dargo（DOM 文本层，源仓不动）----
