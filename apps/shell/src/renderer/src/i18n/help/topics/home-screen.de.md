@@ -9,7 +9,7 @@ Die Startseite ist GenOffices Startseite: eine Navigationsleiste links, Dateilis
 - **Zuletzt verwendet**: die zuletzt geöffneten Dateien. Jede Zeile trägt ihren Zeitpunkt — heute, gestern oder das Datum.
 - **Favoriten**: die von Ihnen mit einem Stern versehenen Dateien. Fahren Sie über eine Dateizeile und klicken Sie auf den Stern, um sie hinzuzufügen oder zu entfernen. **In Gruppe verschieben** im ⋯-Menü sortiert markierte Dateien in benannte Gruppen; die Markierungs-Ansicht filtert danach.
 - **Ask AI**: das Wissensbasis-Panel — stellen Sie Fragen und erhalten Sie Antworten mit Quellen aus Ihren markierten Dateien (siehe unten).
-- **Genspark Projects**: nach der Anmeldung an Ihrem Genspark-Konto werden die im Web mit Genspark AI erstellten Projekte angezeigt; klicken Sie auf eines, um die Bearbeitung im Browser fortzusetzen. Suche, Sortierung nach Zeit, Aktualisierung und Nachladen werden unterstützt.
+- **Dargo Projects**: nach der Anmeldung an Ihrem Dargo-Konto werden die im Web mit Dargo AI erstellten Projekte angezeigt; klicken Sie auf eines, um die Bearbeitung im Browser fortzusetzen. Suche, Sortierung nach Zeit, Aktualisierung und Nachladen werden unterstützt.
 - **Ordner**: Verzeichnisse, die Sie mit **Ordner hinzufügen…** zur Seitenleiste hinzufügen oder aus dem Dateimanager dorthin ziehen. Jedes wird zu einem Stammverzeichnis, das Sie öffnen, mit Unterordnern füllen, umbenennen und daraus entfernen können; geht eines offline, wird es als nicht verfügbar angezeigt und lässt sich aus der Liste nehmen. **Neuer Ordner** legt ein weiteres an.
 
 Hier gibt es keinen Eintrag für den Papierkorb. Gelöschte Dateien landen im Papierkorb des Systems, und sie wiederherzustellen ist Sache des Betriebssystems.
@@ -36,7 +36,7 @@ Haken Sie das Kontrollkästchen einer Zeile an oder klicken Sie mit ⌘/Strg, um
 Das Suchfeld oben erfasst gleichzeitig zwei Dinge:
 
 - **Dateinamen**: schnelles Filtern nach Namen.
-- **Dateinhalte**: GenOffice indexiert Ihre Dateien im Hintergrund (Text in docx/xlsx/pptx/pdf/md/html), sodass die Volltextsuche auch Dateien findet. Umfang und Schalter stehen in den Sucheinstellungen.
+- **Dateinhalte**: Dargo indexiert Ihre Dateien im Hintergrund (Text in docx/xlsx/pptx/pdf/md/html), sodass die Volltextsuche auch Dateien findet. Umfang und Schalter stehen in den Sucheinstellungen.
 
 ## Schnellstart-Karten
 
@@ -60,12 +60,12 @@ Was die einzelnen Karten tun:
 
 - Markieren Sie zuerst Dateien (jeden Typ, den die App liest); die Kopfzeile des Panels zählt den Bestand, und eine leere Wissensbasis bittet Sie, erst etwas zu markieren.
 - Antworten nennen die Herkunftsdateien; ein Klick auf eine Quelle öffnet die Datei in ihrem Editor.
-- Erfordert die Anmeldung bei Genspark. Die Unterhaltung lebt nur im Speicher — das Schließen der App beendet sie.
+- Erfordert die Anmeldung bei Dargo. Die Unterhaltung lebt nur im Speicher — das Schließen der App beendet sie.
 - Die Suche läuft über den lokalen Dateiindex wie die Start-Suche; verschwundene Dateien fallen still aus dem Bestand.
 - Gruppen ordnen nur die Markierungsliste — die Wissensbasis umfasst immer alle markierten Dateien.
 
-## Cloud-Projekte (Genspark Projects)
+## Cloud-Projekte (Dargo Projects)
 
-- Für die erste Nutzung ist eine Anmeldung an Ihrem Genspark-Konto nötig (Gerätecode-Verfahren: GenOffice zeigt einen Code, Sie schließen die Anmeldung im Browser ab).
+- Für die erste Nutzung ist eine Anmeldung an Ihrem Dargo-Konto nötig (Gerätecode-Verfahren: Dargo zeigt einen Code, Sie schließen die Anmeldung im Browser ab).
 - Die Projektliste wird mit dem Web synchronisiert; „In Browser öffnen“ führt dorthin, um weiterzuarbeiten.
 - Ohne Anmeldung ist keine der lokalen Funktionen beeinträchtigt.

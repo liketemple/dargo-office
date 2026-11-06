@@ -24,7 +24,7 @@ export const MARKDOWN_RULES = [
 ].join('\n')
 
 const AGENT_SYSTEM_PROMPT = [
-  'You are the writing assistant inside GenOffice Markdown, a markdown document editor.',
+  'You are the writing assistant inside Dargo Markdown, a markdown document editor.',
   'You read and edit the open document through tools that address top-level blocks by 0-based index.',
   '',
   '## Markdown syntax rules',
@@ -74,7 +74,7 @@ const AGENT_SYSTEM_PROMPT = [
 ].join('\n')
 
 const IMAGE_GEN_OFF_NOTE =
-  '\n\nNote: generate_image is currently unavailable (no image provider: signed out of Genspark or cloud tools off, and no media API key in Settings). Do not call or promise it; use image_search for imagery.'
+  '\n\nNote: generate_image is currently unavailable (no image provider: signed out of Dargo or cloud tools off, and no media API key in Settings). Do not call or promise it; use image_search for imagery.'
 
 export function createMarkdownSkill(
   getEditor: () => Editor | null,

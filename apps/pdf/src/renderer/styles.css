@@ -1361,7 +1361,7 @@ button {
 
 /* ── Encrypted document password ── */
 
-/* ---- encrypted-PDF password dialog (Genspark DS form dialog, matching the
+/* ---- encrypted-PDF password dialog (Dargo DS form dialog, matching the
    docs PasswordDialog and mockups/protect-dialogs-genspark.html §1/2) ---- */
 
 /* base .pdf-modal-mask (defined below) top-aligns dialogs; this one centers */
@@ -1768,7 +1768,7 @@ button {
   column-gap: 16px;
 }
 
-/* Genspark DS modal footer buttons: secondary = bg-subtle, primary = black (#232425) */
+/* Dargo DS modal footer buttons: secondary = bg-subtle, primary = black (#232425) */
 .pdf-modal-btn {
   display: inline-flex;
   align-items: center;
@@ -3961,7 +3961,7 @@ button {
   white-space: nowrap;
 }
 
-/* Genspark brand logo (shared by the collapsed entry and the AI panel title) */
+/* Dargo brand logo (shared by the collapsed entry and the AI panel title) */
 .genspark-badge {
   display: block;
   width: 22px;

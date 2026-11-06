@@ -875,7 +875,7 @@ export function AiPanel({
       <header className="ai-panel-header">
         <span className="ai-panel-title">
           <GensparkMark size={22} />
-          Genspark
+          Dargo
         </span>
         <div className="ai-panel-header-actions">
           <AiPanelSideButton
@@ -1429,7 +1429,7 @@ function IconClock(): ReactElement {
   )
 }
 
-/** Genspark brand mark, inline for crisp device-resolution rendering */
+/** Dargo brand mark, inline for crisp device-resolution rendering */
 export function GensparkMark({ size = 18 }: { size?: number }): React.JSX.Element {
   return (
     <svg

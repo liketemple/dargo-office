@@ -7,7 +7,7 @@ Todos os arquivos abertos compartilham uma janela; a barra de guias no topo muda
 ## Noções básicas
 
 - **Mudar**: clique em uma guia, ou gire a roda do mouse sobre a barra para percorrer as guias.
-- **Fechar**: o × na guia, ou ⌘W/ctrl+W. Se houver alterações não salvas, o GenOffice pergunta primeiro.
+- **Fechar**: o × na guia, ou ⌘W/ctrl+W. Se houver alterações não salvas, o Dargo pergunta primeiro.
 - **Nova**: o + no extremo direito da barra.
 - **Ativação imediata**: pressionar uma guia muda para ela logo que é pressionada, sem esperar que o clique termine.
 

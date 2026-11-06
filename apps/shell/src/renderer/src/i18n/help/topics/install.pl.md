@@ -1,4 +1,4 @@
-# Instalacja GenOffice
+# Instalacja Dargo
 
 Każda kompilacja jest publikowana na [stronie Releases](https://github.com/genspark-ai/genoffice/releases/latest). Wszystkie pochodzą z `main`; instalatory dla macOS i Windows są podpisane.
 
@@ -18,11 +18,11 @@ Starsze wersje pozostają na stronie Releases.
 
 ## W systemie macOS
 
-Otwórz plik `.dmg` i przeciągnij **GenOffice** do katalogu Aplikacje. W kompilacji Intel przy pierwszym uruchomieniu trzeba potwierdzić otwarcie: kliknij prawym przyciskiem aplikację w Aplikacjach ▸ Otwórz. To Gatekeeper reaguje na obraz dysku wyglądający na niepodpisany, a nie uszkodzone pobranie.
+Otwórz plik `.dmg` i przeciągnij **Dargo** do katalogu Aplikacje. W kompilacji Intel przy pierwszym uruchomieniu trzeba potwierdzić otwarcie: kliknij prawym przyciskiem aplikację w Aplikacjach ▸ Otwórz. To Gatekeeper reaguje na obraz dysku wyglądający na niepodpisany, a nie uszkodzone pobranie.
 
 ## W systemie Windows
 
-Uruchom instalator `.exe`. Umieszcza GenOffice w menu Start i rejestruje `.docx`, `.xlsx`, `.pptx`, `.pdf` i podobne, więc dwuklik na plik go otwiera.
+Uruchom instalator `.exe`. Umieszcza Dargo w menu Start i rejestruje `.docx`, `.xlsx`, `.pptx`, `.pdf` i podobne, więc dwuklik na plik go otwiera.
 
 ## W systemie Linux
 
@@ -42,8 +42,8 @@ sudo zypper install ./genoffice-<version>.x86_64.rpm  # openSUSE
 **AppImage** — działa tam, gdzie leży, bez żadnego etapu instalacji:
 
 ```sh
-chmod +x GenOffice-<version>.AppImage
-./GenOffice-<version>.AppImage
+chmod +x Dargo-<version>.AppImage
+./Dargo-<version>.AppImage
 ```
 
 Wymaga środowiska uruchomieniowego FUSE 2. Jeśli wolisz go nie instalować, uruchom go z `--appimage-extract-and-run`, a sandbox zadziała z katalogu wypakowanego.

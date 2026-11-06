@@ -1,20 +1,20 @@
 # Menyambungkan ejen penulisan kod
 
-GenOffice bercakap dengan Model Context Protocol, jadi ejen penulisan kod boleh membaca, menulis dan memaparkan dokumen anda melalui enjin yang sama seperti yang digunakan oleh aplikasi. Ejen itu tidak meneka format fail: ia mendapat skema op bertip daripada definisi yang sama seperti yang disahkan oleh pelaku.
+Dargo bercakap dengan Model Context Protocol, jadi ejen penulisan kod boleh membaca, menulis dan memaparkan dokumen anda melalui enjin yang sama seperti yang digunakan oleh aplikasi. Ejen itu tidak meneka format fail: ia mendapat skema op bertip daripada definisi yang sama seperti yang disahkan oleh pelaku.
 
 ## Mendaftarkannya dari aplikasi
 
 Tempatnya ialah **Tetapan ▸ Integrasi**. Panel itu mempunyai dua bahagian, dan anda boleh menggunakan satu sahaja atau kedua-duanya.
 
-**Skill.** Satu baris bagi setiap ejen penulisan kod yang ditemui pada mesin ini — Claude Code, Codex, Cursor, Gemini CLI, Copilot CLI, OpenCode, Windsurf —, setiap satu dengan **Pasang**, **Kemas kini** dan **Nyahpasang**, tambahan lagi **Pasang ke folder lain…**, **Muat turun skill (zip)** dan **Salin laluan**. Jika pembantu anda tidak tersenarai, tunjukkan GenOffice folder tempat ia membaca `SKILL.md`, atau simpan fail zip itu dan biarkan pembantu memasangnya. Skill dan MCP boleh bersebelahan: pembantu akan memilih salah satu, dan keduanya melakukan perkara yang sama sekali.
+**Skill.** Satu baris bagi setiap ejen penulisan kod yang ditemui pada mesin ini — Claude Code, Codex, Cursor, Gemini CLI, Copilot CLI, OpenCode, Windsurf —, setiap satu dengan **Pasang**, **Kemas kini** dan **Nyahpasang**, tambahan lagi **Pasang ke folder lain…**, **Muat turun skill (zip)** dan **Salin laluan**. Jika pembantu anda tidak tersenarai, tunjukkan Dargo folder tempat ia membaca `SKILL.md`, atau simpan fail zip itu dan biarkan pembantu memasangnya. Skill dan MCP boleh bersebelahan: pembantu akan memilih salah satu, dan keduanya melakukan perkara yang sama sekali.
 
-**MCP.** Dua laluan ditawarkan: **Dimulakan oleh pembantu (disyorkan)**, di mana anda menambah konfigurasi yang dipaparkan pada klien anda dan pembantu memulakan pelayan itu sendiri, serta **Pelayan HTTP tempatan**, yang dijalankan aplikasi untuk anda. Bagaimanapun, pembantu akhirnya bercakap dengan GenOffice dan anda tidak sekali pun perlu menaip arahan.
+**MCP.** Dua laluan ditawarkan: **Dimulakan oleh pembantu (disyorkan)**, di mana anda menambah konfigurasi yang dipaparkan pada klien anda dan pembantu memulakan pelayan itu sendiri, serta **Pelayan HTTP tempatan**, yang dijalankan aplikasi untuk anda. Bagaimanapun, pembantu akhirnya bercakap dengan Dargo dan anda tidak sekali pun perlu menaip arahan.
 
 **Cuba sekarang** Buka sembang baharu dalam pembantu anda dan minta dengan bahasa biasa, contohnya:
 
 - “Tukar ~/Downloads/report.md kepada dokumen Word”
 - “Buat pembentangan 6 slaid tentang hasil S3 kami”
-- “Tukar budget.xlsx kepada PDF dan buka dalam GenOffice”
+- “Tukar budget.xlsx kepada PDF dan buka dalam Dargo”
 
 ## Mendaftarkannya dari baris arahan
 
@@ -76,7 +76,7 @@ Ejen yang tidak tahu kosa kata op akan meneka. Skill itu membawa rujukan dan pan
 
 ## Apa yang boleh dicapainya dalam aplikasi
 
-Pelayan itu tidak terhad kepada fail pada cakera. Selagi GenOffice berjalan, ejen juga boleh bekerja melalui tetingkap:
+Pelayan itu tidak terhad kepada fail pada cakera. Selagi Dargo berjalan, ejen juga boleh bekerja melalui tetingkap:
 
 - **`open_in_genoffice`** membuka fail dalam satu tab dan memberikan tumpu kepadanya.
 - **`open_documents`** menyenaraikan setiap dokumen yang anda buka — id, jenis, laluan, dan sama ada ia mempunyai perubahan yang belum disimpan —, kemudian membaca kandungan terkini sesuatu dokumen, menyimpannya di tempatnya, atau menutupnya, dengan menyimpan dahulu melainkan anda menyuruhnya membuang.

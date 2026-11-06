@@ -36,5 +36,5 @@ Her düzenleyici AI panelini çağırabilir: bir şey seçin, bir yönerge verin
 
 ## Gizlilik
 
-- Yönergeler ve ilgili belge içeriği **yapılandırdığınız model hizmetine** gider (Genspark barındırmalı veya özel bir uç nokta, sonraki bölüm); yapılandırma yoksa gönderim de yoktur.
+- Yönergeler ve ilgili belge içeriği **yapılandırdığınız model hizmetine** gider (Dargo barındırmalı veya özel bir uç nokta, sonraki bölüm); yapılandırma yoksa gönderim de yoktur.
 - Yerel dosyalar başka hiçbir yere yüklenmez; BYOK anahtarları bu makinedeki uygulama ayar dosyasında saklanır ve yalnızca istek başlıklarında gönderilir.

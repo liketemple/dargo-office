@@ -32,7 +32,7 @@ macOS and Windows ship it inside the app bundle. To use it by name, run `genoffi
 | `capabilities`    | Report which cloud features are configured on this machine.                                                                                                                                                         |
 | `guide`           | The op reference and design guides, generated from the same definitions the executor validates against — so it cannot drift from what `apply` accepts. `--json` returns it with each op's schema.                   |
 | `install-cli`     | Put `genoffice` on the `PATH`.                                                                                                                                                                                      |
-| `skill`           | List the coding agents found on this machine and install or update the GenOffice skill in them.                                                                                                                     |
+| `skill`           | List the coding agents found on this machine and install or update the Dargo skill in them.                                                                                                                     |
 | `mcp`             | Serve every command as a Model Context Protocol tool. See **Connecting a coding agent**.                                                                                                                            |
 
 ## Editing: docs, sheets, slides

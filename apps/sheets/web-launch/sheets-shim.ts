@@ -14,6 +14,14 @@ import { Buffer } from 'buffer'
 // 缺了这层，sheet.sparklines 是 undefined，编辑提交监听器读 .length 即抛
 // TypeError（App.tsx 编辑流水线每次提交必炸）。
 import { workbookFileSchema } from '../src/shared/desktop-api'
+// M9 保存链（全浏览器，无 Rust）：规划器 + JSZip 组装器均来自上游 xlsx-gateway
+// 的内存实现（assembleWithJsZip 注释明说 sidecar 流式才是大文件路径）。
+// 懒加载：该链顶层带 node: 命名导入（经 vite 别名到 shims）且模块图庞大，
+// 静态导入会拖死首屏——只在首次保存时按需拉取
+type Gateway = typeof import('@genoffice/xlsx-gateway/gateway/xlsx-gateway')
+let gatewayPromise: Promise<Gateway> | null = null
+const loadGateway = (): Promise<Gateway> =>
+  (gatewayPromise ??= import('@genoffice/xlsx-gateway/gateway/xlsx-gateway'))
 
 const g = globalThis as Record<string, unknown>
 if (!g.Buffer) g.Buffer = Buffer
@@ -106,6 +114,231 @@ if (!g.global) g.global = globalThis
   let pendingSrc: string | null = q.get('src')
   let pendingName: string = q.get('name') || 'workbook.xlsx'
   let sessionMeta: any = null // open 应答回存的 sheets 元数据
+  let currentName = 'workbook.xlsx'
+  let originalBytes: Uint8Array | null = null // M9 保存的基准字节（保存后换新）
+  let sheetNames = new Map<string, string>() // sheetId → 文件内表名（保存映射用）
+
+  /** open 应答 → workbookFile（与 Electron 主进程 openWorkbooksFromPaths 同构：
+   *  schema.parse 补齐引擎 serde 省略的默认字段） */
+  async function buildWorkbookFile(r: any, bytes: Uint8Array | ArrayBuffer, name: string) {
+    const digest = await crypto.subtle.digest('SHA-256', bytes)
+    const sha256 = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('')
+    return workbookFileSchema.parse({
+      sessionId: r.sessionId,
+      name,
+      path: name,
+      sha256,
+      fileBytes: bytes.byteLength,
+      entryCount: r.entryCount ?? 0,
+      sheets: r.sheets ?? [],
+      activeTab: r.activeTab ?? 0,
+      styles: r.styles ?? [],
+      dxfStyles: r.dxfStyles ?? [],
+      visuals: r.visuals ?? [],
+      definedNames: r.definedNames ?? [],
+      normalFontName: r.normalFontName,
+      workbookProtection: r.workbookProtection,
+      readOnly: false,
+      needsSaveAs: false,
+      unsavedNew: false,
+      date1904: r.date1904 ?? false,
+      shortDateFormat: r.shortDateFormat,
+      themeColors: r.themeColors,
+      themeFonts: r.themeFonts
+    })
+  }
+
+  /** M9 保存：宿主 postMessage（带回执，与 docs 垫片同协议） */
+  function saveViaHost(bytes: Uint8Array, name: string): Promise<{ ok: boolean; error?: string }> {
+    return new Promise((resolve) => {
+      if (window.parent === window) return resolve({ ok: false, error: '无宿主（独立调试形态）' })
+      const tag = 'save-' + Math.random().toString(36).slice(2)
+      const onReply = (ev: MessageEvent) => {
+        if (ev?.data?.type === 'file-editor:save:result' && ev.data.tag === tag) {
+          window.removeEventListener('message', onReply)
+          resolve({ ok: !!ev.data.ok, error: ev.data.error })
+        }
+      }
+      window.addEventListener('message', onReply)
+      window.parent.postMessage({ type: 'file-editor:save', tag, name, bytes }, '*')
+      setTimeout(() => {
+        window.removeEventListener('message', onReply)
+        resolve({ ok: false, error: '宿主保存超时（编辑器宿主页未响应）' })
+      }, 30000)
+    })
+  }
+
+  /** renderer 保存请求 → planner 入参映射（sheets-main writeWorkbookTo 的浏览器同构，
+   *  去掉对话框/磁盘守卫/加密——那些是 Electron 专属语义） */
+  function mapSaveRequest(request: any) {
+    const addedSheetNames = new Map<string, string>()
+    const duplicateSources = new Map<string, string>()
+    const renames: { sheetName: string; newName: string }[] = []
+    const removals: string[] = []
+    const hiddenChanges: { sheetName: string; hidden: boolean }[] = []
+    const tabColorStates: { sheetName: string; color: string | null }[] = []
+    let orderChanged = false
+    for (const op of request.sheetOps ?? []) {
+      if (op.kind === 'add-sheet') { addedSheetNames.set(op.sheetId, op.name); continue }
+      if (op.kind === 'duplicate-sheet') {
+        const sourceName = sheetNames.get(op.sourceSheetId)
+        if (!sourceName) throw new Error('Unknown duplicate source ' + op.sourceSheetId + '.')
+        addedSheetNames.set(op.sheetId, op.name)
+        duplicateSources.set(op.sheetId, sourceName)
+        continue
+      }
+      if (op.kind === 'reorder-sheets') { orderChanged = true; continue }
+      const sheetName = addedSheetNames.get(op.sheetId) ?? sheetNames.get(op.sheetId)
+      if (!sheetName) throw new Error('Unknown worksheet ' + op.sheetId + '.')
+      if (op.kind === 'rename-sheet') renames.push({ sheetName, newName: op.newName })
+      else if (op.kind === 'set-sheet-hidden') hiddenChanges.push({ sheetName, hidden: op.hidden })
+      else if (op.kind === 'set-sheet-tab-color') tabColorStates.push({ sheetName, color: op.color })
+      else removals.push(sheetName)
+    }
+    const renameByOriginal = new Map(renames.map((rn) => [rn.sheetName, rn.newName]))
+    const resolveSheetName = (sheetId: string): string => {
+      const n = addedSheetNames.get(sheetId) ?? sheetNames.get(sheetId)
+      if (!n) throw new Error('Unknown worksheet ' + sheetId + '.')
+      return n
+    }
+    const sheetPlan =
+      (request.sheetOps ?? []).some((op: any) => op.kind !== 'set-sheet-tab-color')
+        ? {
+            renames,
+            additions: [...addedSheetNames].map(([sheetId, name]) => ({
+              name,
+              sourceSheetName: duplicateSources.get(sheetId)
+            })),
+            removals,
+            hiddenChanges,
+            orderChanged,
+            order: (request.sheetOrder ?? []).map((sheetId: string) => {
+              const original = resolveSheetName(sheetId)
+              return addedSheetNames.has(sheetId)
+                ? original
+                : renameByOriginal.get(original) ?? original
+            })
+          }
+        : undefined
+    const edits = (request.edits ?? []).map((edit: any) => ({
+      sheetName: resolveSheetName(edit.sheetId),
+      row: edit.row,
+      column: edit.column,
+      writeValue: edit.writeValue,
+      cell: { value: edit.value, formula: edit.formula },
+      style: edit.style,
+      rich: edit.rich,
+      styleReset: edit.styleReset
+    }))
+    const bulkConstantFills = (request.bulkConstantFills ?? []).map(({ sheetId, ...fill }: any) => ({
+      sheetName: resolveSheetName(sheetId),
+      ...fill
+    }))
+    const opsBySheet = new Map<string, any[]>()
+    for (const op of request.structuralOps ?? []) {
+      const sheetName = resolveSheetName(op.sheetId)
+      const sheetOps = opsBySheet.get(sheetName) ?? []
+      if ('range' in op) sheetOps.push({ kind: op.kind, range: op.range })
+      else if ('size' in op) sheetOps.push({ kind: op.kind, start: op.start, end: op.end, size: op.size })
+      else if ('level' in op)
+        sheetOps.push({
+          kind: op.kind, start: op.start, end: op.end, level: op.level,
+          ...(op.collapsed === undefined ? {} : { collapsed: op.collapsed })
+        })
+      else if ('summaryBelow' in op)
+        sheetOps.push({ kind: op.kind, summaryBelow: op.summaryBelow, summaryRight: op.summaryRight })
+      else if ('hidden' in op) sheetOps.push({ kind: op.kind, start: op.start, end: op.end, hidden: op.hidden })
+      else if ('style' in op) sheetOps.push({ kind: op.kind, start: op.start, end: op.end, style: op.style })
+      else if ('before' in op) sheetOps.push({ kind: op.kind, index: op.index, count: op.count, before: op.before })
+      else sheetOps.push({ kind: op.kind, index: op.index, count: op.count })
+      opsBySheet.set(sheetName, sheetOps)
+    }
+    const structuralOps = [...opsBySheet].map(([sheetName, ops]) => ({ sheetName, ops }))
+    const linksBySheet = new Map<string, { row: number; column: number; target: string | null }[]>()
+    for (const link of request.hyperlinkEdits ?? []) {
+      const sheetName = resolveSheetName(link.sheetId)
+      const list = linksBySheet.get(sheetName) ?? []
+      list.push({ row: link.row, column: link.column, target: link.target })
+      linksBySheet.set(sheetName, list)
+    }
+    const bySheet = (items: any[] = []) =>
+      items.map(({ sheetId, ...rest }: any) => ({ sheetName: resolveSheetName(sheetId), ...rest }))
+    const formulaValuesBySheet = new Map<string, any[]>()
+    for (const cell of request.formulaValues ?? []) {
+      const sheetName = resolveSheetName(cell.sheetId)
+      const list = formulaValuesBySheet.get(sheetName) ?? []
+      list.push({ row: cell.row, column: cell.column, value: cell.value })
+      formulaValuesBySheet.set(sheetName, list)
+    }
+    const pivotAdditions = (request.pivotAdditions ?? []).map((pv: any) => ({
+      sheetName: resolveSheetName(pv.sheetId),
+      sourceSheetName: resolveSheetName(pv.sourceSheetId),
+      ...pv,
+      sheetId: undefined,
+      sourceSheetId: undefined
+    }))
+    return {
+      edits,
+      structuralOps,
+      chartEdits: request.chartEdits ?? [],
+      sheetPlan,
+      filterStates: (request.filterStates ?? []).map((st: any) => ({
+        sheetName: resolveSheetName(st.sheetId), filter: st.filter, hiddenRows: st.hiddenRows, visibilityRange: st.visibilityRange
+      })),
+      hyperlinkEdits: [...linksBySheet].map(([sheetName, links]) => ({ sheetName, edits: links })),
+      cfStates: (request.cfStates ?? []).map((st: any) => ({ sheetName: resolveSheetName(st.sheetId), rules: st.rules })),
+      dvStates: (request.dvStates ?? []).map((st: any) => ({ sheetName: resolveSheetName(st.sheetId), rules: st.rules })),
+      sheetProtections: bySheet(request.sheetProtections),
+      definedNamesState: request.definedNamesState ?? null,
+      visualAdditions: (request.visualAdditions ?? []).map((v: any) => ({
+        sheetName: resolveSheetName(v.sheetId), anchor: v.anchor, chart: v.chart, shape: v.shape, image: v.image
+      })),
+      pageSetupStates: bySheet(request.pageSetupStates),
+      noteStates: (request.noteStates ?? []).map(({ sheetId, notes }: any) => ({ sheetName: resolveSheetName(sheetId), notes })),
+      tableAdditions: (request.tableAdditions ?? []).map((tb: any) => ({
+        sheetName: resolveSheetName(tb.sheetId), area: tb.area, name: tb.name, columnNames: tb.columnNames,
+        style: tb.style, bandedRows: tb.bandedRows,
+        options: {
+          headerRow: tb.headerRow, totalsRow: tb.totalsRow, firstColumn: tb.firstColumn,
+          lastColumn: tb.lastColumn, bandedColumns: tb.bandedColumns, filterButton: tb.filterButton
+        }
+      })),
+      pivotAdditions,
+      pivotCacheRefreshPaths: request.pivotCacheRefreshPaths ?? [],
+      pivotRefreshUpdates: request.pivotRefreshUpdates ?? [],
+      visualEdits: request.visualEdits ?? [],
+      sparklineAdditions: bySheet(request.sparklineAdditions),
+      formulaValues: [...formulaValuesBySheet].map(([sheetName, cells]) => ({ sheetName, cells })),
+      themeState: request.themeState ?? null,
+      workbookProtectionState: request.workbookProtectionState ?? null,
+      protectedRangeStates: (request.protectedRangeStates ?? []).map((st: any) => ({
+        sheetName: resolveSheetName(st.sheetId), ranges: st.ranges
+      })),
+      bulkConstantFills,
+      tabColorStates,
+      tableEdits: (request.tableEdits ?? []).map(({ sheetId, ...edit }: any) => ({ ...edit, sheetName: resolveSheetName(sheetId) })),
+      cellImageAdditions: bySheet(request.cellImageAdditions),
+      externalLinkOps: request.externalLinkOps ?? null,
+      redactionStates:
+        (request.redactionStates ?? null)?.map((state: any) => ({
+          sheetName: state.sheetName,
+          marks: state.marks.map((mark: any) => ({
+            startRow: mark.startRow, endRow: mark.endRow, startColumn: mark.startColumn,
+            endColumn: mark.endColumn, label: mark.label,
+            ...('previousFill' in mark ? { previousFill: mark.previousFill ?? null } : {})
+          }))
+        })) ?? null,
+      slicerState:
+        request.slicerState === null || request.slicerState === undefined
+          ? null
+          : {
+              slicers: request.slicerState.slicers.map(({ sheetId, ...control }: any) => ({
+                ...control, sheetName: resolveSheetName(sheetId)
+              })),
+              removals: [...request.slicerState.removals]
+            }
+    }
+  }
 
   const api: Record<string, unknown> = {
     // ---- 打开 ----
@@ -124,36 +357,11 @@ if (!g.global) g.global = globalThis
         if (!open?.ok) throw new Error(open?.error?.message || 'open failed')
         const r = open.result
         sessionMeta = r
+        currentName = pendingName
+        originalBytes = new Uint8Array(bytes)
+        sheetNames = new Map((r.sheets ?? []).map((sh: any) => [sh.id, sh.name]))
         pendingSrc = null
-        // sha256（WorkbookFile 必填）：WebCrypto 计算
-        const digest = await crypto.subtle.digest('SHA-256', bytes)
-        const sha256 = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('')
-        const result = {
-          sessionId: r.sessionId,
-          name: pendingName,
-          path: pendingName,
-          sha256,
-          fileBytes: bytes.byteLength,
-          entryCount: r.entryCount ?? 0,
-          sheets: r.sheets ?? [],
-          activeTab: r.activeTab ?? 0,
-          styles: r.styles ?? [],
-          dxfStyles: r.dxfStyles ?? [],
-          visuals: r.visuals ?? [],
-          definedNames: r.definedNames ?? [],
-          normalFontName: r.normalFontName,
-          workbookProtection: r.workbookProtection,
-          readOnly: false,
-          needsSaveAs: false,
-          unsavedNew: true,
-          date1904: r.date1904 ?? false,
-          shortDateFormat: r.shortDateFormat,
-          themeColors: r.themeColors,
-          themeFonts: r.themeFonts
-        }
-        // Electron 主进程在这一步做 workbookFileSchema.parse（sheets-main.ts
-        // openWorkbooksFromPaths），省略字段在此补默认——垫片同构照做。
-        return workbookFileSchema.parse(result)
+        return buildWorkbookFile(r, bytes, currentName)
       } catch (e) {
         console.error('[sheets-shim] open 失败', e)
         return null
@@ -242,8 +450,8 @@ if (!g.global) g.global = globalThis
     onThemeChanged: () => () => {},
     getDocumentTheme: async () => 'follow',
     onDocumentThemeChanged: () => () => {},
-    // shortcut: 自动保存开着自己会每 30s 触发一次注定失败的保存，M9 编辑落盘后恢复 'on'
-    getAutoSaveDefault: async () => 'off',
+    // M9 已落盘：自动保存恢复（30s + 失焦），与桌面语义一致
+    getAutoSaveDefault: async () => 'on',
     onAutoSaveDefaultChanged: () => () => {},
     getAiPanelPrefs: async () => ({ textSize: 'md', spellcheck: true }),
     setAiPanelPrefs: async (p: unknown) => p,
@@ -256,12 +464,63 @@ if (!g.global) g.global = globalThis
     onSidecarCrashed: () => () => {},
     updateWorkbookPassword: async () => ({ ok: false }),
 
-    // ---- 保存 ----
-    // 真实保存路径是 saveWorkbookEdits（renderer 只调它，save-actions.ts:783/871）：
-    // 增量 journal 需引擎侧合并产新字节，web Worker 宿主尚无此层（M9）。
-    // 返回 { canceled: true } 是 workbookSaveResultSchema 的合法分支，
-    // 走 renderer 现成的「已取消」UX；缺字段对象会让 result.file.sha256 抛 TypeError。
-    saveWorkbookEdits: async () => ({ canceled: true }),
+    // ---- 保存（M9：全浏览器链，规划器+JSZip 组装器来自上游 xlsx-gateway 内存实现）----
+    saveWorkbookEdits: async (request: any) => {
+      if (!originalBytes || !sessionMeta) return { canceled: true }
+      if (request.mode !== 'save') return { canceled: true } // save-as/恢复等 Electron 专属语义
+      const args = mapSaveRequest(request)
+      console.info('[sheets-shim] 保存规划开始', (request.edits ?? []).length, '处编辑')
+      const { planCellEditsToXlsx, createBufferEntrySource, assembleWithJsZip } = await loadGateway()
+      const source = await createBufferEntrySource(originalBytes)
+      const plan = await planCellEditsToXlsx(
+        source,
+        args.edits,
+        args.structuralOps,
+        args.chartEdits,
+        args.sheetPlan,
+        args.filterStates,
+        args.hyperlinkEdits,
+        args.cfStates,
+        args.dvStates,
+        args.sheetProtections,
+        args.definedNamesState,
+        args.visualAdditions,
+        args.pageSetupStates,
+        args.noteStates,
+        args.tableAdditions,
+        args.pivotAdditions,
+        args.pivotCacheRefreshPaths,
+        args.pivotRefreshUpdates,
+        args.visualEdits,
+        args.sparklineAdditions,
+        args.formulaValues,
+        args.themeState,
+        args.workbookProtectionState,
+        args.protectedRangeStates,
+        args.bulkConstantFills,
+        args.tabColorStates,
+        args.tableEdits,
+        args.cellImageAdditions,
+        args.externalLinkOps,
+        args.redactionStates,
+        args.slicerState
+      )
+      const mutation = await assembleWithJsZip(originalBytes, plan)
+      const bytes = new Uint8Array(mutation.buffer)
+      console.info('[sheets-shim] 组装完成', bytes.byteLength, 'B，touched', plan.touchedEntries.length, '项')
+      // 经宿主落盘（带回执）；失败抛错走 renderer 现成的保存失败 UX
+      const host = await saveViaHost(bytes, currentName)
+      if (!host.ok) throw new Error(host.error || '宿主保存失败')
+      // 会话换新：旧 worker 会话关掉，按保存后字节重开（renderer 拿到新 workbookFile）
+      wCmd(JSON.stringify({ version: 1, requestId: 'close-' + Date.now(), command: 'close', sessionId: sessionMeta.sessionId })).catch(() => {})
+      const reopen = await wOpen(bytes.buffer as ArrayBuffer, currentName)
+      if (!reopen?.ok) throw new Error(reopen?.error?.message || '保存后重开会话失败')
+      originalBytes = bytes
+      sessionMeta = reopen.result
+      sheetNames = new Map((reopen.result.sheets ?? []).map((sh: any) => [sh.id, sh.name]))
+      const file = await buildWorkbookFile(reopen.result, bytes, currentName)
+      return { canceled: false, file, touchedEntries: [...plan.touchedEntries] }
+    },
 
     // ---- 杂项 ----
     fontMetrics: async () => null,

@@ -54,7 +54,7 @@ import { FoundSkills } from './FoundSkills'
 import './settings.css'
 
 // ── Settings modal (opened from the account menu) ─────────
-// Genspark-style two-pane dialog: section nav on the left, fields on the right.
+// Dargo-style two-pane dialog: section nav on the left, fields on the right.
 // All values go through the existing home IPC; nothing is stored locally.
 
 // sorted by ISO 639 language code — native-script labels have no natural
@@ -392,7 +392,7 @@ function AiModelPane({ t }: { t: TFunc }) {
   // endpoint itself. Keyed on the catalog's `needsBaseUrl` flag rather than on
   // the literal 'custom' id, so it follows the slot rather than the name, and
   // stays a no-op while any other provider is selected — a local server saved
-  // months ago is never contacted while Genspark is in use. Aggregators flagged
+  // months ago is never contacted while Dargo is in use. Aggregators flagged
   // `liveModels` (OpenRouter) join in at their default address, their shipped
   // list standing in until the catalog answers.
   const liveEntry = catalog.find(
@@ -1775,7 +1775,7 @@ export interface SettingsModalProps {
   onClose: () => void
   /** the decision-model search settings were saved; the home search re-judges or drops its current order */
   onFileSearchChange?: () => void
-  /** closes the modal and launches the Genspark login flow (progress shows on the account entry) */
+  /** closes the modal and launches the Dargo login flow (progress shows on the account entry) */
   onLogin: () => void
   onLogout: () => void
   /** an installed skill is older than the bundled one: dot on the Integrations entry */

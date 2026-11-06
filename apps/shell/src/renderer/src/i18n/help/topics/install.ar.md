@@ -1,4 +1,4 @@
-# تثبيت GenOffice
+# تثبيت Dargo
 
 كل نسخة منشورة على [صفحة الإصدارات](https://github.com/genspark-ai/genoffice/releases/latest). وجميعها مبنية من `main`؛ وحزّامات التثبيت لنظامي macOS وWindows موقّعة.
 
@@ -18,11 +18,11 @@
 
 ## على macOS
 
-افتح ملف `.dmg` واسحب **GenOffice** إلى مجلد التطبيقات. وفي نسخة Intel يطلب منك أول تشغيل تأكيد الفتح: انقر نقرًا يمينًا على التطبيق داخل التطبيقات ▸ فتح. هذا Gatekeeper أمام صورة قرص تبدو غير موقّعة، لا تنزيلًا تالفًا.
+افتح ملف `.dmg` واسحب **Dargo** إلى مجلد التطبيقات. وفي نسخة Intel يطلب منك أول تشغيل تأكيد الفتح: انقر نقرًا يمينًا على التطبيق داخل التطبيقات ▸ فتح. هذا Gatekeeper أمام صورة قرص تبدو غير موقّعة، لا تنزيلًا تالفًا.
 
 ## على Windows
 
-شغّل حزمة التثبيت `.exe`. فهي تضع GenOffice في قائمة ابدأ وتسجّل `.docx` و`.xlsx` و`.pptx` و`.pdf` وما شابهها، بحيث يفتح الملف بالنقر المزدوج.
+شغّل حزمة التثبيت `.exe`. فهي تضع Dargo في قائمة ابدأ وتسجّل `.docx` و`.xlsx` و`.pptx` و`.pdf` وما شابهها، بحيث يفتح الملف بالنقر المزدوج.
 
 ## على Linux
 
@@ -42,8 +42,8 @@ sudo zypper install ./genoffice-<version>.x86_64.rpm  # openSUSE
 **AppImage** — يعمل من مكانه، بلا خطوة تثبيت:
 
 ```sh
-chmod +x GenOffice-<version>.AppImage
-./GenOffice-<version>.AppImage
+chmod +x Dargo-<version>.AppImage
+./Dargo-<version>.AppImage
 ```
 
 يحتاج إلى بيئة تشغيل FUSE 2. وإن لم تكن ترغب في تثبيتها فشغّله مع `--appimage-extract-and-run`، وتعمل البيئة المعزولة من المجلد المستخرج.

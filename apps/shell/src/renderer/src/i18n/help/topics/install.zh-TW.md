@@ -1,4 +1,4 @@
-# 安裝 GenOffice
+# 安裝 Dargo
 
 每個版本都發布在 [Releases 頁面](https://github.com/genspark-ai/genoffice/releases/latest)。它們全部出自 `main`；macOS 與 Windows 的安裝程式已簽署。
 
@@ -18,11 +18,11 @@
 
 ## 在 macOS 上
 
-開啟 `.dmg`，把 **GenOffice** 拖進「應用程式」資料夾。Intel 版首次啟動時會請你確認開啟：在「應用程式」裡按右鍵點這個應用程式 ▸ 打開。這只是 Gatekeeper 遇到一個看起來未簽署的磁碟映像，並不是下載損毀。
+開啟 `.dmg`，把 **Dargo** 拖進「應用程式」資料夾。Intel 版首次啟動時會請你確認開啟：在「應用程式」裡按右鍵點這個應用程式 ▸ 打開。這只是 Gatekeeper 遇到一個看起來未簽署的磁碟映像，並不是下載損毀。
 
 ## 在 Windows 上
 
-執行 `.exe` 安裝程式。它會把 GenOffice 放進開始功能表，並註冊 `.docx`、`.xlsx`、`.pptx`、`.pdf` 等格式，按兩下檔案就會用 GenOffice 開啟。
+執行 `.exe` 安裝程式。它會把 Dargo 放進開始功能表，並註冊 `.docx`、`.xlsx`、`.pptx`、`.pdf` 等格式，按兩下檔案就會用 Dargo 開啟。
 
 ## 在 Linux 上
 
@@ -42,8 +42,8 @@ sudo zypper install ./genoffice-<version>.x86_64.rpm  # openSUSE
 **AppImage** — 免安裝，放在哪裡就在哪裡執行：
 
 ```sh
-chmod +x GenOffice-<version>.AppImage
-./GenOffice-<version>.AppImage
+chmod +x Dargo-<version>.AppImage
+./Dargo-<version>.AppImage
 ```
 
 它需要 FUSE 2 執行環境。如果不想安裝它，可以用 `--appimage-extract-and-run` 來執行，沙箱會從解壓出來的目錄運作。

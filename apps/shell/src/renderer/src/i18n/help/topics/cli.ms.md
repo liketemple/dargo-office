@@ -32,7 +32,7 @@ macOS dan Windows menyertainya dalam bungkusan aplikasi. Untuk memanggilnya deng
 | `capabilities`    | Melaporkan keupayaan awan yang dikonfigurasi pada mesin ini.                                                                                                                                                                                        |
 | `guide`           | Rujukan op dan panduan reka bentuk, dijana daripada definisi yang sama seperti yang disahkan oleh pelaku — jadi ia tidak mungkin berbeza daripada apa yang diterima oleh `apply`. `--json` mengembalikannya bersama skema setiap op.                |
 | `install-cli`     | Meletakkan `genoffice` pada `PATH`.                                                                                                                                                                                                                 |
-| `skill`           | Menyenaraikan ejen penulisan kod yang ditemui pada mesin ini, dan memasang atau mengemas kini kemahiran GenOffice di dalamnya.                                                                                                                      |
+| `skill`           | Menyenaraikan ejen penulisan kod yang ditemui pada mesin ini, dan memasang atau mengemas kini kemahiran Dargo di dalamnya.                                                                                                                      |
 | `mcp`             | Menyediakan setiap perintah sebagai alat Model Context Protocol. Lihat **Menyambungkan ejen penulisan kod**.                                                                                                                                        |
 
 ## Penyuntingan: docs, sheets, slides

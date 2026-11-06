@@ -1791,8 +1791,8 @@ export function App({
           })
           // Signed-out failures get an inline sign-in button; detected via
           // gsk status rather than matching the localized error text — but only
-          // when Genspark is the provider: a BYOK user's error (e.g. their own
-          // provider's rate limit) must not advertise a Genspark sign-in (genoffice#1948)
+          // when Dargo is the provider: a BYOK user's error (e.g. their own
+          // provider's rate limit) must not advertise a Dargo sign-in (genoffice#1948)
           void window.desktopApi
             .aiGskStatus()
             .then((status) => {
@@ -1820,7 +1820,7 @@ export function App({
     if (!settings) return false
     const config = settings.providers[settings.provider]
     if (!config?.model) return false
-    // Genspark's key never lands in the settings file; the main process injects
+    // Dargo's key never lands in the settings file; the main process injects
     // it from the gsk login state. When logged out, requests return an error
     // guiding sign-in — not intercepted here.
     return settings.provider === 'genspark' || !!config.apiKey

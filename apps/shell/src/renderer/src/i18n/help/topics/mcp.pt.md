@@ -1,20 +1,20 @@
 # Ligar um agente de programação
 
-O GenOffice fala o Model Context Protocol, por isso um agente de programação consegue ler, escrever e renderizar os seus documentos através dos mesmos motores que o aplicativo usa. O agente não está a adivinhar um formato de arquivo: recebe os esquemas tipados das operações a partir das mesmas definições contra as quais o executor valida.
+O Dargo fala o Model Context Protocol, por isso um agente de programação consegue ler, escrever e renderizar os seus documentos através dos mesmos motores que o aplicativo usa. O agente não está a adivinhar um formato de arquivo: recebe os esquemas tipados das operações a partir das mesmas definições contra as quais o executor valida.
 
 ## Registrá-lo a partir do aplicativo
 
 É em **Configurações ▸ Integrações** que isto se faz. O painel tem duas metades, e pode usar uma ou as duas.
 
-**A skill.** Uma linha por cada agente de programação encontrado nesta máquina — Claude Code, Codex, Cursor, Gemini CLI, Copilot CLI, OpenCode, Windsurf —, cada uma com **Instalar**, **Atualizar** e **Desinstalar**, a que se juntam **Instalar em outra pasta…**, **Baixar skill (zip)** e **Copiar caminho**. Se o seu assistente não estiver na lista, indique ao GenOffice uma pasta de onde ele lê o `SKILL.md`, ou grave o zip e deixe o assistente instalá-lo. A skill e o MCP podem andar lado a lado: o assistente escolhe um dos dois, e fazem exatamente as mesmas coisas.
+**A skill.** Uma linha por cada agente de programação encontrado nesta máquina — Claude Code, Codex, Cursor, Gemini CLI, Copilot CLI, OpenCode, Windsurf —, cada uma com **Instalar**, **Atualizar** e **Desinstalar**, a que se juntam **Instalar em outra pasta…**, **Baixar skill (zip)** e **Copiar caminho**. Se o seu assistente não estiver na lista, indique ao Dargo uma pasta de onde ele lê o `SKILL.md`, ou grave o zip e deixe o assistente instalá-lo. A skill e o MCP podem andar lado a lado: o assistente escolhe um dos dois, e fazem exatamente as mesmas coisas.
 
-**MCP.** São oferecidas duas vias: **Iniciado pelo assistente (recomendado)**, em que acrescenta a configuração apresentada ao seu cliente e o assistente arranca o servidor sozinho, e o **Servidor HTTP local**, que o aplicativo executa por si. De qualquer forma, o assistente acaba a falar com o GenOffice e nunca escreve um comando.
+**MCP.** São oferecidas duas vias: **Iniciado pelo assistente (recomendado)**, em que acrescenta a configuração apresentada ao seu cliente e o assistente arranca o servidor sozinho, e o **Servidor HTTP local**, que o aplicativo executa por si. De qualquer forma, o assistente acaba a falar com o Dargo e nunca escreve um comando.
 
 **Experimente** Abra um chat novo no seu assistente e peça com suas palavras, por exemplo:
 
 - “Transforme ~/Downloads/report.md em um documento Word”
 - “Monte uma apresentação de 6 slides sobre nossos resultados do 3º trimestre”
-- “Converta budget.xlsx para PDF e abra no GenOffice”
+- “Converta budget.xlsx para PDF e abra no Dargo”
 
 ## Registrá-lo a partir da linha de comando
 
@@ -76,7 +76,7 @@ Um agente que não conhece o vocabulário das operações vai adivinhar. A skill
 
 ## O que consegue alcançar no aplicativo
 
-O servidor não se limita aos arquivos em disco. Enquanto o GenOffice estiver em execução, o agente também pode trabalhar através da janela:
+O servidor não se limita aos arquivos em disco. Enquanto o Dargo estiver em execução, o agente também pode trabalhar através da janela:
 
 - **`open_in_genoffice`** abre um arquivo em uma guia e coloca o foco nela.
 - **`open_documents`** lista todos os documentos que tem abertos — id, tipo, caminho e se têm alterações não salvas —, e depois lê o conteúdo atual de um deles, salva-o no próprio local ou fecha-o, salvando primeiro, a não ser que lhe peça para descartar.

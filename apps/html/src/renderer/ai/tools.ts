@@ -669,7 +669,7 @@ async function executeImageSearch(call: AgentToolCall): Promise<ToolExecution> {
 
 /** hidden from the tool list while no image provider is reachable (see createHtmlSkill) */
 export const IMAGE_GEN_OFF_NOTE =
-  '\n\nNote: generate_image is currently unavailable (no image provider: signed out of Genspark or cloud tools off, and no media API key in Settings). Do not call or promise it; use search_images for imagery.'
+  '\n\nNote: generate_image is currently unavailable (no image provider: signed out of Dargo or cloud tools off, and no media API key in Settings). Do not call or promise it; use search_images for imagery.'
 
 export function createHtmlSkillCore(access: HtmlDocAccess): {
   buildContext(): string

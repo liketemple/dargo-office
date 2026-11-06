@@ -3446,7 +3446,7 @@ function RibbonInner({
           </div>
         ) : tab === 'home' ? (
           <>
-            {/* ---- Genspark AI (first slot: entry + one-click AI actions) ---- */}
+            {/* ---- Dargo AI (first slot: entry + one-click AI actions) ---- */}
             <div className="ribbon-group">
               <div className="ribbon-group-items">
                 <button
@@ -3457,7 +3457,7 @@ function RibbonInner({
                   <span className="rb-big-icon">
                     <GensparkMark size={26} />
                   </span>
-                  <span>Genspark AI</span>
+                  <span>Dargo AI</span>
                 </button>
                 <button
                   className="rb-big ai-entry"
@@ -3582,7 +3582,7 @@ function RibbonInner({
                   <span>{t('aiMindMapBtn')}</span>
                 </button>
               </div>
-              <div className="ribbon-group-label">Genspark AI</div>
+              <div className="ribbon-group-label">Dargo AI</div>
             </div>
 
             <div className="ribbon-sep" />

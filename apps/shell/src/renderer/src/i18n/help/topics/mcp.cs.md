@@ -1,20 +1,20 @@
 # Připojení programového agenta
 
-GenOffice mluví protokolem Model Context Protocol, takže programový agent může číst, zapisovat a vykreslovat vaše dokumenty stejnými enginy, jaké používá aplikace. Agent netuší formát souboru: dostane typovaná schémata op ze stejných definic, proti kterým executor validuje.
+Dargo mluví protokolem Model Context Protocol, takže programový agent může číst, zapisovat a vykreslovat vaše dokumenty stejnými enginy, jaké používá aplikace. Agent netuší formát souboru: dostane typovaná schémata op ze stejných definic, proti kterým executor validuje.
 
 ## Registrace v aplikaci
 
 Uděláte to v **Nastavení ▸ Integrace**. Panel má dvě poloviny a můžete použít jednu, druhou, nebo obě.
 
-**Skill.** Jeden řádek na každého programového agenta nalezeného v tomto počítači — Claude Code, Codex, Cursor, Gemini CLI, Copilot CLI, OpenCode, Windsurf —, každý s **Nainstalovat**, **Aktualizovat** a **Odinstalovat**, navíc **Nainstalovat do jiné složky…**, **Stáhnout skill (zip)** a **Kopírovat cestu**. Pokud váš asistent v seznamu není, ukážte GenOffice složku, ze které čte `SKILL.md`, nebo uložte zip a nechte ho nainstalovat samotný asistent. Skill a MCP mohou stát vedle sebe: asistent si vybere jedno z nich a dělají přesně stejné věci.
+**Skill.** Jeden řádek na každého programového agenta nalezeného v tomto počítači — Claude Code, Codex, Cursor, Gemini CLI, Copilot CLI, OpenCode, Windsurf —, každý s **Nainstalovat**, **Aktualizovat** a **Odinstalovat**, navíc **Nainstalovat do jiné složky…**, **Stáhnout skill (zip)** a **Kopírovat cestu**. Pokud váš asistent v seznamu není, ukážte Dargo složku, ze které čte `SKILL.md`, nebo uložte zip a nechte ho nainstalovat samotný asistent. Skill a MCP mohou stát vedle sebe: asistent si vybere jedno z nich a dělají přesně stejné věci.
 
-**MCP.** Nabízí se dvě cesta: **Spouští asistent (doporučeno)** — tam přidáte zobrazenou konfiguraci do svého klienta a asistent server spustí sám — a **Místní HTTP server**, který spustí aplikace za vás. Tak či onak nakonec asistent mluví s GenOffice a vy nikdy nenapíšete příkaz.
+**MCP.** Nabízí se dvě cesta: **Spouští asistent (doporučeno)** — tam přidáte zobrazenou konfiguraci do svého klienta a asistent server spustí sám — a **Místní HTTP server**, který spustí aplikace za vás. Tak či onak nakonec asistent mluví s Dargo a vy nikdy nenapíšete příkaz.
 
 **Vyzkoušejte** Otevřete v asistentovi nový chat a požádejte běžnými slovy, například:
 
 - “Převeď ~/Downloads/report.md na dokument Word”
 - “Udělej prezentaci o 6 snímcích o našich výsledcích za 3. čtvrtletí”
-- “Převeď budget.xlsx do PDF a otevři ho v GenOffice”
+- “Převeď budget.xlsx do PDF a otevři ho v Dargo”
 
 ## Registrace z příkazového řádku
 
@@ -76,7 +76,7 @@ Agent, který nezná slovní zásobu op, bude hádat. Skill přináší referen�
 
 ## Čeho se v aplikaci dostane
 
-Server není omezen na soubory na disku. Dokud GenOffice běží, může agent pracovat i přes okno:
+Server není omezen na soubory na disku. Dokud Dargo běží, může agent pracovat i přes okno:
 
 - **`open_in_genoffice`** otevře soubor v kartě a dá jí fokus.
 - **`open_documents`** vypíše každý dokument, který máte otevřený — id, typ, cestu a zda v něm jsou neuložené změny — a pak přečte aktuální obsah jednoho z nich, uloží ho na místě, nebo ho zavře, přičemž nejdřív uloží, pokud mu neřeknete, aby změny zahodil.

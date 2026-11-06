@@ -1,4 +1,4 @@
-# GenOffice'i yükleme
+# Dargo'i yükleme
 
 Her derleme [Sürümler sayfasında](https://github.com/genspark-ai/genoffice/releases/latest) yayımlanır. Hepsi `main` dalından gelir; macOS ve Windows yükleyicileri imzalıdır.
 
@@ -18,11 +18,11 @@ Eski sürümler Sürümler sayfasında kalmaya devam eder.
 
 ## macOS'te
 
-`.dmg` dosyasını açın ve **GenOffice**'i Uygulamalar klasörüne sürükleyin. Intel derlemesinde ilk açılışta uygulamayı açmayı onaylamanız istenir: Uygulamalar'da uygulamaya sağ tıklayın ▸ Aç. Bu, Gatekeeper'ın imzasız görünen bir disk görüntüsüyle karşılaşmasıdır; bozuk bir indirme değildir.
+`.dmg` dosyasını açın ve **Dargo**'i Uygulamalar klasörüne sürükleyin. Intel derlemesinde ilk açılışta uygulamayı açmayı onaylamanız istenir: Uygulamalar'da uygulamaya sağ tıklayın ▸ Aç. Bu, Gatekeeper'ın imzasız görünen bir disk görüntüsüyle karşılaşmasıdır; bozuk bir indirme değildir.
 
 ## Windows'ta
 
-`.exe` yükleyicisini çalıştırın. GenOffice'i Başlat menüsüne ekler ve `.docx`, `.xlsx`, `.pptx`, `.pdf` ve benzeri uzantıları kaydeder; böylece bir dosyaya çift tıklamak onu açar.
+`.exe` yükleyicisini çalıştırın. Dargo'i Başlat menüsüne ekler ve `.docx`, `.xlsx`, `.pptx`, `.pdf` ve benzeri uzantıları kaydeder; böylece bir dosyaya çift tıklamak onu açar.
 
 ## Linux'ta
 
@@ -42,8 +42,8 @@ sudo zypper install ./genoffice-<version>.x86_64.rpm  # openSUSE
 **AppImage** — bulunduğu yerden, yükleme adımı olmadan çalışır:
 
 ```sh
-chmod +x GenOffice-<version>.AppImage
-./GenOffice-<version>.AppImage
+chmod +x Dargo-<version>.AppImage
+./Dargo-<version>.AppImage
 ```
 
 FUSE 2 çalışma zamanına ihtiyaç duyar. Onu yüklemek istemiyorsanız `--appimage-extract-and-run` ile çalıştırın; korumalı alan, çıkarılan dizinden çalışır.

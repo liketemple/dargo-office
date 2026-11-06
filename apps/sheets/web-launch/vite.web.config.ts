@@ -59,6 +59,20 @@ export default defineConfig({
       }
     }
   ],
+  // M9 保存链：xlsx-gateway（规划器+JSZip 组装器）在浏览器跑，其顶层 node: 导入
+  // 映射到 M8 已备的浏览器 shim（fs/path 走 vite 浏览器外置桩，保存路径不会触达）
+  resolve: {
+    alias: [
+      { find: /^node:fs\/promises$/, replacement: fileURLToPath(new URL('./shims/node-fs-promises.ts', import.meta.url)) },
+      { find: /^node:fs$/, replacement: fileURLToPath(new URL('./shims/node-fs.ts', import.meta.url)) },
+      { find: /^node:path$/, replacement: fileURLToPath(new URL('./shims/node-path.ts', import.meta.url)) },
+      { find: /^node:crypto$/, replacement: fileURLToPath(new URL('./shims/node-crypto.ts', import.meta.url)) },
+      { find: /^node:zlib$/, replacement: fileURLToPath(new URL('./shims/node-zlib.ts', import.meta.url)) },
+      { find: /^node:stream$/, replacement: fileURLToPath(new URL('./shims/node-stream.ts', import.meta.url)) },
+      { find: /^buffer$/, replacement: fileURLToPath(new URL('./shims/buffer.ts', import.meta.url)) }
+    ]
+  },
+
   define: { 'import.meta.env.DEV': 'true', 'import.meta.env.MODE': '"development"' },
   publicDir: fileURLToPath(new URL('./public', import.meta.url)),
   server: {

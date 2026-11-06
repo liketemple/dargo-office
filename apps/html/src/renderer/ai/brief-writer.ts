@@ -5,7 +5,7 @@ import type { PlanMode } from './tools'
  * The brief (directions, sections, reference material) is drafted by its own
  * tool-less request whose reply body IS the JSON. A brief-sized tool argument is
  * buffered server-side and arrives in bursts with minute-long silences, which
- * the Genspark gateway cuts as an idle connection (observed: 4.6k chars, 64 s
+ * the Dargo gateway cuts as an idle connection (observed: 4.6k chars, 64 s
  * without a byte). Text deltas stream continuously, so the same content is safe.
  */
 export const BRIEF_MAX_CHARS = 40_000
@@ -26,7 +26,7 @@ export type BriefPlanResult =
   { ok: true; raw: Record<string, unknown> } | { ok: false; error: string }
 
 const SYSTEM = [
-  'You are the brief writer of GenOffice HTML, a design-first editor for single-file HTML pages. From the conversation transcript you receive, draft the brief the user will confirm before the system writes the page.',
+  'You are the brief writer of Dargo HTML, a design-first editor for single-file HTML pages. From the conversation transcript you receive, draft the brief the user will confirm before the system writes the page.',
   '',
   '## The brief',
   '- core_hook: one sentence with tension, ideally a number or contrast.',

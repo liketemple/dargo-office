@@ -32,7 +32,7 @@ macOS ve Windows komutu uygulama paketinin içinde sunar. Adıyla kullanmak içi
 | `capabilities`    | Bu makinede hangi bulut özelliklerinin yapılandırıldığını bildirir.                                                                                                                                              |
 | `guide`           | Op başvurusu ve tasarım kılavuzları; yürütücünün doğruladığı tanımların aynısından üretilir — bu yüzden `apply` komutunun kabul ettiğinden sapamaz. `--json` her op'un şemasıyla birlikte döndürür.              |
 | `install-cli`     | `genoffice` komutunu `PATH`'e ekler.                                                                                                                                                                             |
-| `skill`           | Bu makinede bulunan kodlama aracılarını listeler ve GenOffice becerisini bunlara kurar ya da günceller.                                                                                                          |
+| `skill`           | Bu makinede bulunan kodlama aracılarını listeler ve Dargo becerisini bunlara kurar ya da günceller.                                                                                                          |
 | `mcp`             | Her komutu bir Model Context Protocol aracı olarak sunar. Bkz. **Bir kodlama aracısı bağlama**.                                                                                                                  |
 
 ## Düzenleme: docs, sheets, slides

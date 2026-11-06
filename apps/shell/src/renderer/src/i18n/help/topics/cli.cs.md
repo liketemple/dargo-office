@@ -32,7 +32,7 @@ V macOS i Windows je příkaz uvnitř balíčku aplikace. Chcete-li ho volat jm�
 | `capabilities`    | Označí, které cloudové funkce jsou na tomto počítači nastavené.                                                                                                                                               |
 | `guide`           | Referenční příručka op a návrhové průvodce, vygenerované ze stejných definic, proti kterým executor validuje — takže se nemůže rozejít s tím, co přijímá `apply`. `--json` ji vrátí se schématem každé op.    |
 | `install-cli`     | Umístí `genoffice` do `PATH`.                                                                                                                                                                                 |
-| `skill`           | Vypíše programové agenty nalezené na tomto počítači a nainstaluje do nich nebo v nich aktualizuje dovednost GenOffice.                                                                                        |
+| `skill`           | Vypíše programové agenty nalezené na tomto počítači a nainstaluje do nich nebo v nich aktualizuje dovednost Dargo.                                                                                        |
 | `mcp`             | Vystaví každý příkaz jako nástroj Model Context Protocol. Viz **Připojení programového agenta**.                                                                                                              |
 
 ## Úpravy: Docs, Sheets, Slides

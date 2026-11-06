@@ -23,7 +23,7 @@ Açık / Koyu / Sistem. Sistem, işletim sisteminin görünümünü izler ve dü
 - **AI kenar çubuğu konumu** (sol veya sağ), **AI paneli metin boyutu** ve **AI sohbetinde yazım denetimi**.
 - **Yeni belgelerde AI panelini aç** — kapalıyken yeni bir belge, panel daraltılmış ve tek tık uzakta olarak başlar.
 - **Tüm belgeleri otomatik kaydet** her düzenleyicide Otomatik Kaydet'i varsayılan olarak açar; tek bir pencere için yine de kapatabilirsiniz.
-- **Değiştir** düğmesiyle **Kayıt Konumu** ve .docx / .xlsx / .pptx dosyalarını GenOffice'e atamak için **Office belgeleri için varsayılan uygulama**.
+- **Değiştir** düğmesiyle **Kayıt Konumu** ve .docx / .xlsx / .pptx dosyalarını Dargo'e atamak için **Office belgeleri için varsayılan uygulama**.
 
 ## AI Medya ve Arama
 
@@ -39,22 +39,22 @@ Anahtar değil — her yetenek ona hizmet eden satıcıyı seçer ve bir satıc�
 
 ## Varsayılan uygulama bağlamaları
 
-Ayarlar, GenOffice'i .docx / .xlsx / .pptx / .pdf ve benzerleri için işleyici olarak kaydedebilir (platform düzeyinde varsayılan uygulama kaydı; istendiğinde onaylayın).
+Ayarlar, Dargo'i .docx / .xlsx / .pptx / .pdf ve benzerleri için işleyici olarak kaydedebilir (platform düzeyinde varsayılan uygulama kaydı; istendiğinde onaylayın).
 
 ## Üçüncü taraf bildirimleri ve güncellemeler
 
 - Yardım ▸ Üçüncü taraf bildirimleri: uygulamayla gönderilen tam açık kaynak lisans envanteri.
 - Yardım ▸ Güncellemeleri denetle: elle denetimi tetikler; daha yeni bir sürüm yükleme ister.
 
-## Genspark oturum açma
+## Dargo oturum açma
 
-- Oturum açma girişi (ayarlar veya bulut proje listesi) bir **cihaz kodu** akışı kullanır: GenOffice bir kod gösterir ve tarayıcıda oturum açma sayfasını açar; tamamlandığında otomatik olarak devam eder.
-- Oturum açma yalnızca şunlar için kullanılır: bulut proje listesi ve Genspark'ın barındırılan modelleri. Onsuz her yerel özellik ve özel modeller çalışmaya devam eder.
+- Oturum açma girişi (ayarlar veya bulut proje listesi) bir **cihaz kodu** akışı kullanır: Dargo bir kod gösterir ve tarayıcıda oturum açma sayfasını açar; tamamlandığında otomatik olarak devam eder.
+- Oturum açma yalnızca şunlar için kullanılır: bulut proje listesi ve Dargo'ın barındırılan modelleri. Onsuz her yerel özellik ve özel modeller çalışmaya devam eder.
 - Oturumu kapatmak ayarlarda tek tıktır.
 
 ## MCP tümleştirmesi (ileri düzey kullanıcılar / AI istemcileri için)
 
-**Tümleştirmeler**, GenOffice'i bir kodlama aracısına bağlayan bölmedir ve kendi makalesi vardır: Bir kodlama aracısını bağlama. Kısa sürüm — bir yol seçin (komut satırı veya MCP), o bölümü izleyin, sonra yeni bir sohbet başlatıp sorun.
+**Tümleştirmeler**, Dargo'i bir kodlama aracısına bağlayan bölmedir ve kendi makalesi vardır: Bir kodlama aracısını bağlama. Kısa sürüm — bir yol seçin (komut satırı veya MCP), o bölümü izleyin, sonra yeni bir sohbet başlatıp sorun.
 
 ![Ayarlar ▸ Tümleştirmeler: üç adım, ardından beceri satırları ve MCP seçenekleri](img/settings-integrations.png)
 

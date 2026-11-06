@@ -32,7 +32,7 @@ macOS dan Windows menyertakannya di dalam bundel aplikasi. Untuk memanggilnya de
 | `capabilities`    | Melaporkan fitur awan mana yang sudah dikonfigurasi di komputer ini.                                                                                                                                                                                     |
 | `guide`           | Referensi op dan panduan desain, dibangkitkan dari definisi yang sama dengan yang dipakai eksekutor untuk memvalidasi — jadi tidak mungkin melenceng dari apa yang diterima `apply`. `--json` mengembalikannya beserta skema tiap op.                    |
 | `install-cli`     | Menaruh `genoffice` di `PATH`.                                                                                                                                                                                                                           |
-| `skill`           | Mendaftarkan agen pemrograman yang ditemukan di komputer ini, lalu memasang atau memperbarui skill GenOffice di dalamnya.                                                                                                                                |
+| `skill`           | Mendaftarkan agen pemrograman yang ditemukan di komputer ini, lalu memasang atau memperbarui skill Dargo di dalamnya.                                                                                                                                |
 | `mcp`             | Menyajikan semua perintah sebagai alat Model Context Protocol. Lihat **Menghubungkan agen pemrograman**.                                                                                                                                                 |
 
 ## Menyunting: dokumen, lembar, presentasi

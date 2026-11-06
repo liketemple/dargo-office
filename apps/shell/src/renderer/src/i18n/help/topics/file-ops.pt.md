@@ -17,7 +17,7 @@ As regras: a extensão é preservada automaticamente; caracteres proibidos, pont
 
 ## Excluir
 
-- **⋯ ▸ Excluir** no Início: pergunta quais os arquivos e depois move-os para a **lixeira do sistema**, onde o sistema operacional os pode restaurar. O GenOffice não mantém um histórico próprio para desfazer essa operação — a recuperação é responsabilidade da lixeira, não de um aviso.
+- **⋯ ▸ Excluir** no Início: pergunta quais os arquivos e depois move-os para a **lixeira do sistema**, onde o sistema operacional os pode restaurar. O Dargo não mantém um histórico próprio para desfazer essa operação — a recuperação é responsabilidade da lixeira, não de um aviso.
 
 ## Duplicar
 

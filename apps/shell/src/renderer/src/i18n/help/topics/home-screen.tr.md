@@ -1,6 +1,6 @@
 # Giriş ekranı: dosyalarınızın yaşadığı yer
 
-Giriş, GenOffice'in başlangıç sayfasıdır: solda bir gezinti kenar çubuğu, sağda dosya listeleri ve hızlı oluşturma kartları.
+Giriş, Dargo'in başlangıç sayfasıdır: solda bir gezinti kenar çubuğu, sağda dosya listeleri ve hızlı oluşturma kartları.
 
 ![Giriş ekranı](img/home-screen.png)
 
@@ -9,7 +9,7 @@ Giriş, GenOffice'in başlangıç sayfasıdır: solda bir gezinti kenar çubuğu
 - **Son Kullanılanlar**: yakın zamanda açtığınız dosyalar. Her satır ne zaman açıldığıyla damgalanır — bugün, dün veya tarih.
 - **Yıldızlı**: yıldızladığınız dosyalar. Bir dosya satırının üzerine gelip yıldıza tıklayarak ekleyin veya kaldırın. ⋯ menüsündeki **Gruba taşı**, yıldızlı dosyaları adlandırılmış gruplara ayırır; Yıldızlı görünümü bunlara göre süzer.
 - **AI'ya Sor**: bilgi tabanı paneli — sorular sorun ve yıldızlı dosyalarınızdan atıflı yanıtlar alın (aşağıya bakın).
-- **Genspark Projeleri**: Genspark hesabınızda oturum açtıktan sonra, web'de Genspark AI ile oluşturduğunuz projeleri gösterir; düzenlemeye tarayıcıda devam etmek için birine tıklayın. Arama, zamana göre sıralama, yenileme ve daha fazlasını yükleme desteklenir.
+- **Dargo Projeleri**: Dargo hesabınızda oturum açtıktan sonra, web'de Dargo AI ile oluşturduğunuz projeleri gösterir; düzenlemeye tarayıcıda devam etmek için birine tıklayın. Arama, zamana göre sıralama, yenileme ve daha fazlasını yükleme desteklenir.
 - **Klasörler**: **Klasör ekle…** ile kenar çubuğuna eklediğiniz veya dosya yöneticisinden sürüklediğiniz dizinler. Her biri açabileceğiniz, içinde alt klasör oluşturabileceğiniz, yeniden adlandırıp kaldırabileceğiniz bir kök olur; çevrimdışı kalan biri kullanılamaz olarak görünür ve listeden çıkarılabilir. **Yeni klasör** bir tane daha oluşturur.
 
 Burada Çöp Kutusu girdisi yoktur. Silinen dosyalar sistem çöp kutusuna gider ve birini geri yüklemek işletim sisteminin işidir.
@@ -36,7 +36,7 @@ Bir seçim oluşturmak için bir satırdaki onay kutusunu işaretleyin veya ⌘/
 Üstteki arama kutusu aynı anda iki şeyi eşleştirir:
 
 - **Dosya adları**: ada göre hızlı süzme.
-- **Dosya içerikleri**: GenOffice dosyalarınızı arka planda dizinler (docx/xlsx/pptx/pdf/md/html içindeki metin), böylece gövde metni aramak da dosya bulur. Kapsam ve anahtarlar arama ayarlarındadır.
+- **Dosya içerikleri**: Dargo dosyalarınızı arka planda dizinler (docx/xlsx/pptx/pdf/md/html içindeki metin), böylece gövde metni aramak da dosya bulur. Kapsam ve anahtarlar arama ayarlarındadır.
 
 ## Hızlı başlangıç kartları
 
@@ -60,12 +60,12 @@ Her kartın yaptığı:
 
 - Önce dosyaları yıldızlayın (uygulamanın okuduğu herhangi bir tür); panel başlığı derlemi sayar ve boş bir bilgi tabanı size gidip bir şey yıldızlamanızı söyler.
 - Yanıtlar geldikleri dosyalara atıfta bulunur; dosyayı düzenleyicisinde açmak için bir atıfa tıklayın.
-- Genspark'ta oturum açmayı gerektirir. Konuşma yalnızca bellekte yaşar — uygulamayı kapatmak onu sonlandırır.
+- Dargo'ta oturum açmayı gerektirir. Konuşma yalnızca bellekte yaşar — uygulamayı kapatmak onu sonlandırır.
 - Arama, Giriş araması gibi yerel dosya dizininde çalışır; kaybolan dosyalar sessizce derlemden düşer.
 - Gruplar yalnızca Yıldızlı listesini düzenler — bilgi tabanı her zaman tüm yıldızlı dosyaları kapsar.
 
-## Bulut projeleri (Genspark Projeleri)
+## Bulut projeleri (Dargo Projeleri)
 
-- İlk kullanım Genspark hesabınızda oturum açmayı gerektirir (cihaz kodu akışı: GenOffice bir kod gösterir, oturum açmayı tarayıcıda tamamlarsınız).
+- İlk kullanım Dargo hesabınızda oturum açmayı gerektirir (cihaz kodu akışı: Dargo bir kod gösterir, oturum açmayı tarayıcıda tamamlarsınız).
 - Proje listesi web ile eşitlenir; Tarayıcıda aç, devam etmek için oraya atlar.
 - Oturum açmamak yerel özelliklerin hiçbirini etkilemez.

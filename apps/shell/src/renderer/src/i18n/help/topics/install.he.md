@@ -1,4 +1,4 @@
-# התקנת GenOffice
+# התקנת Dargo
 
 כל גרסה מתפרסמת ב[עמוד ההפצות](https://github.com/genspark-ai/genoffice/releases/latest). כולן מגיעות מ-`main`; ומתקיני macOS ו-Windows חתומים.
 
@@ -18,11 +18,11 @@
 
 ## ב-macOS
 
-פתחו את ה-`.dmg` וגררו את **GenOffice** אל Applications. בגרסת Intel ההפעלה הראשונה מבקשת אישור לפתיחה: לחצו לחיצה ימנית על האפליקציה ב-Applications ▸ פתיחה. זה Gatekeeper מול דיסק-אימג' שנראה לא חתום, לא הורדה פגומה.
+פתחו את ה-`.dmg` וגררו את **Dargo** אל Applications. בגרסת Intel ההפעלה הראשונה מבקשת אישור לפתיחה: לחצו לחיצה ימנית על האפליקציה ב-Applications ▸ פתיחה. זה Gatekeeper מול דיסק-אימג' שנראה לא חתום, לא הורדה פגומה.
 
 ## ב-Windows
 
-הפעילו את מתקין ה-`.exe`. הוא מוסיף את GenOffice לתפריט ההתחלה ורושם `.docx`, `.xlsx`, `.pptx`, `.pdf` ודומים, כך שלחיצה כפולה על קובץ פותחת אותו.
+הפעילו את מתקין ה-`.exe`. הוא מוסיף את Dargo לתפריט ההתחלה ורושם `.docx`, `.xlsx`, `.pptx`, `.pdf` ודומים, כך שלחיצה כפולה על קובץ פותחת אותו.
 
 ## ב-Linux
 
@@ -42,8 +42,8 @@ sudo zypper install ./genoffice-<version>.x86_64.rpm  # openSUSE
 **AppImage** — רץ מהמקום שבו הוא נמצא, בלי שום שלב התקנה:
 
 ```sh
-chmod +x GenOffice-<version>.AppImage
-./GenOffice-<version>.AppImage
+chmod +x Dargo-<version>.AppImage
+./Dargo-<version>.AppImage
 ```
 
 הוא זקוק לסביבת הריצה FUSE 2. אם אתם מעדיפים לא להתקין אותה, הפעילו אותו עם `--appimage-extract-and-run`, ואז החולקה המבודדת עובדת מהתיקייה שחולצה.

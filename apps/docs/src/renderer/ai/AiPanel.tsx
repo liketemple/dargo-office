@@ -175,7 +175,7 @@ interface ChatEntry {
   error?: string
   streaming?: boolean
   turnLimit?: boolean
-  /** the run failed because Genspark is signed out — render an inline sign-in button */
+  /** the run failed because Dargo is signed out — render an inline sign-in button */
   loginRequired?: boolean
   /** tool executions performed during this assistant turn */
   tools?: ToolActivity[]
@@ -225,7 +225,7 @@ const PASTE_MIME_EXT: Record<string, string> = {
   'image/webp': 'webp',
 }
 
-/** File-type icons for attachment cards (Genspark attachment icon set); exts the
+/** File-type icons for attachment cards (Dargo attachment icon set); exts the
  *  attachment allowlist doesn't accept yet are mapped ahead so they light up when added */
 
 export { aiRevisionAuthor }
@@ -415,7 +415,7 @@ export function AiPanel({
   const [attachments, setAttachments] = useState<AttachmentMeta[]>([])
   const [attachedSkills, setAttachedSkills] = useState<string[]>([])
   const [attachNotice, setAttachNotice] = useState<string | null>(null)
-  /** data-URL previews for image attachments, keyed by path (Genspark composer thumbnails) */
+  /** data-URL previews for image attachments, keyed by path (Dargo composer thumbnails) */
   const [attachmentPreviews, setAttachmentPreviews] = useState<Record<string, string>>({})
   /** image paths with a read already issued — one readAttachmentImage per attach, even while pending */
   const previewRequestedRef = useRef(new Set<string>())
@@ -949,8 +949,8 @@ export function AiPanel({
           })
           // Signed-out failures get an inline sign-in button; detected via
           // gsk status rather than matching the localized error text — but only
-          // when Genspark is the provider: a BYOK user's error (e.g. their own
-          // provider's rate limit) must not advertise a Genspark sign-in (genoffice#1948)
+          // when Dargo is the provider: a BYOK user's error (e.g. their own
+          // provider's rate limit) must not advertise a Dargo sign-in (genoffice#1948)
           void window.desktop
             .aiGskStatus()
             .then((status) => {
