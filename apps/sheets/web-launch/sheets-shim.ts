@@ -464,6 +464,13 @@ if (!g.global) g.global = globalThis
     onSidecarCrashed: () => () => {},
     updateWorkbookPassword: async () => ({ ok: false }),
 
+    // 保存路径依赖的另外两个 desktopApi 方法（save-actions.ts）：
+    // 崩溃恢复副本——web 形态不做本地副本（协作服务版本链即恢复），诚实返回
+    // {ok:false}（走万能代理会 await 出 undefined，.ok 抛 TypeError 打断保存）
+    writeWorkbookRecovery: async () => ({ ok: false }),
+    // CSV 另存确认对话框——web 形态无此流程，取消语义
+    confirmCsvSave: async () => true,
+
     // ---- 保存（M9：全浏览器链，规划器+JSZip 组装器来自上游 xlsx-gateway 内存实现）----
     saveWorkbookEdits: async (request: any) => {
       if (!originalBytes || !sessionMeta) return { canceled: true }
@@ -555,6 +562,20 @@ if (!g.global) g.global = globalThis
   ;(window as any).aiNamingApi = { suggest: async () => null }
   ;(window as any).nativeSpell = { available: false }
 
+  // 调试出口（E2E/联调用）：读取会话表名映射与保存状态
+  ;(window as any).__shimDebug = {
+    sheetNames: () => [...sheetNames],
+    hasBytes: () => !!originalBytes,
+    name: () => currentName,
+    readCell: async (row: number, column: number) => {
+      const r = await (api.readWorkbookRange as any)({
+        sessionId: sessionMeta?.sessionId,
+        sheetId: [...sheetNames][0]?.[0],
+        range: { startRow: row, endRow: row, startColumn: column, endColumn: column }
+      })
+      return r?.cells?.[0]?.value ?? null
+    }
+  }
   console.info('[sheets-shim] DesktopApi 浏览器垫片已激活', pendingSrc ? '带文档:' + pendingName : '空白')
 
   // ---- 品牌覆盖（eos 嵌入形态 ?embed=1）：Genspark → Dargo（DOM 文本层，源仓不动）----

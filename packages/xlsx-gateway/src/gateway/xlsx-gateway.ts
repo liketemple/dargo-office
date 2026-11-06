@@ -533,8 +533,10 @@ export async function assembleWithJsZip(source: Buffer, plan: MutationPlan): Pro
   for (const [path, content] of plan.replaced) zip.file(path, content, { createFolders: false })
   for (const [path, content] of plan.added) zip.file(path, content, { createFolders: false })
   for (const [path, bytes] of plan.addedBinary) zip.file(path, bytes, { createFolders: false })
+  // uint8array：浏览器/Node 双平台（nodebuffer 在浏览器 jszip 加载早于 Buffer
+  // polyfill 时不可用；Uint8Array 对 Node 侧 fs 写入同样透明）
   const buffer = await zip.generateAsync({
-    type: 'nodebuffer',
+    type: 'uint8array',
     compression: 'DEFLATE',
     compressionOptions: { level: 6 },
   })
@@ -754,7 +756,7 @@ export async function inventoryXlsx(buffer: Buffer): Promise<readonly PackageEnt
   let totalSize = 0
   for (const [path, file] of Object.entries(zip.files)) {
     if (file.dir) continue
-    const bytes = await file.async('nodebuffer')
+    const bytes = await file.async('uint8array')
     totalSize += bytes.length
     if (totalSize > MAX_UNCOMPRESSED_BYTES) {
       throw new Error('Workbook exceeds the uncompressed size limit.')
@@ -2385,7 +2387,7 @@ async function loadSafeZip(buffer: Buffer): Promise<JSZip> {
     if (canonical === path) continue
     zip.remove(path)
     if (file && !file.dir && canonical && !zip.files[canonical]) {
-      zip.file(canonical, await file.async('nodebuffer'), { createFolders: false, date: file.date })
+      zip.file(canonical, await file.async('uint8array'), { createFolders: false, date: file.date })
     }
   }
   return zip
